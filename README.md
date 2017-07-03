@@ -2,6 +2,12 @@
 
 ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 
+- ESP8266-cJSON-demo。在ESP8266中cJSON示例工程。
+- ESP8266-Sniffer-demo。使用ESP8266的sniffer功能。
+- ESP8266-TODO-demo。ESP8266空白工程。
+- ESP8266-TCP&UDP-demo。ESP8266使用TCP&UDP示例工程
+- ESP8266-SmartConfig-demo。ESP8266使用SmartConfig示例工程。
+
 # 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
@@ -12,13 +18,13 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 
 # ESP8266-cJSON-demo
 
-在ESP8266中使用cJSON。
+在ESP8266中使用cJSON，目前cJSON最新版本是1.5.3。
 
 由于ESP8266不支持浮点数，修改了cJSON中有关double的函数。
 
 效果图
 
-![ESP826-cJSON-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/ESP826-cJSON-demo.jpg)
+![ESP826-cJSON-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/ESP8266-cJSON-demo.jpg)
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/52713746
 
