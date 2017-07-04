@@ -13,8 +13,8 @@
 #include "tcp_client.h"
 
 
-#define WIFI_SSID 		"DS_work"
-#define WIFI_PASSWORD	"dashu1208"
+#define WIFI_SSID 		"your ssid"
+#define WIFI_PASSWORD	"your password"
 
 #define HOST	"192.168.10.70"
 #define PORT	2000
