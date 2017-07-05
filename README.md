@@ -4,13 +4,14 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 
 | 工程名称 | 说明 |
 |---|---|
-| ESP8266-cJSON-demo | 在ESP8266中使用cJSON示例工程 |
-| ESP8266-Sniffer-demo | 使用ESP8266的sniffer功能 |
-| ESP8266-TODO-demo | ESP8266空白工程 |
-| ESP8266-SmartConfig-demo | ESP8266使用SmartConfig示例 |
-| ESP8266-wifi_cb-demo | ESP8266连接Wi-Fi后回调事件 |
-| ESP8266-TCP&UDP_server-demo | ESP8266搭建TCP&UDP服务器示例 |
-| ESP8266-TCP&SSL_client-demo | ESP8266TCP&SSL连接服务器示例 |
+| cJSON_app | 使用cJSON示例工程 |
+| sniffer_app | 使用sniffer功能 |
+| todo_app | 空白工程 |
+| SmartConfig_app | 使用SmartConfig示例工程 |
+| wifi_cb_app | 连接Wi-Fi后回调事件功能 |
+| ETCP&UDP_server_app | TCP&UDP服务器示例 |
+| TCP&SSL_client_app | TCP&SSL客户端示例 |
+| ADC_app| 定时读取ADC数值 |
 
 # 使用步骤
 
@@ -20,7 +21,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 
 
 
-# ESP8266-cJSON-demo
+# cJSON_app
 
 在ESP8266中使用cJSON，目前cJSON最新版本是1.5.3。
 
@@ -28,18 +29,18 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 
 效果图
 
-![ESP826-cJSON-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/ESP8266-cJSON-demo.jpg)
+![ESP826-cJSON-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/cJSON.jpg)
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/52713746
 
 
 
-# ESP8266-sniffer-demo
+# sniffer_app
 
 ESP8266使用sniffer获取周围设备的MAC地址。
 
 效果图
 
-![ESP826-sniffer-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/ESP8266-sniffer-demo.jpg)
+![ESP826-sniffer-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/sniffer.jpg)
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/72778688
