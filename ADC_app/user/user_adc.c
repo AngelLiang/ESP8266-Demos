@@ -14,7 +14,7 @@
 
 #define ADC_READ_INTERVAL	3000
 
-static volatile os_timer_t adc_timer;
+static os_timer_t adc_timer;
 
 void ICACHE_FLASH_ATTR
 adc_timer_cb(void *arg)
