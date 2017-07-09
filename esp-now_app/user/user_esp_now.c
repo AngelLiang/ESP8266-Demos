@@ -31,6 +31,10 @@ u8 slave_mac[6] = {0xA2, 0x20, 0xA6, 0x55, 0x55, 0x55};
 #define ESP_NOW_SEND_INTERVAL	3000
 static os_timer_t g_esp_now_timer;
 
+/*
+ * 函数：user_esp_now_recv_cb
+ * 说明：ESP-NOW接收回调函数
+ */
 static void ICACHE_FLASH_ATTR
 user_esp_now_recv_cb(u8 *macaddr, u8 *data, u8 len)
 {
@@ -60,6 +64,10 @@ user_esp_now_recv_cb(u8 *macaddr, u8 *data, u8 len)
 	esp_now_send(macaddr, ack_buf, os_strlen(ack_buf));
 }
 
+/*
+ * 函数：user_esp_now_send_cb
+ * 说明：ESP-NOW发送回调函数
+ */
 void ICACHE_FLASH_ATTR
 user_esp_now_send_cb(u8 *mac_addr, u8 status)
 {
@@ -75,6 +83,10 @@ user_esp_now_send_cb(u8 *mac_addr, u8 status)
 	}
 }
 
+/*
+ * 函数：user_esp_now_send
+ * 说明：ESP-NOW数据发送
+ */
 void ICACHE_FLASH_ATTR
 user_esp_now_send(u8 *mac_addr, u8 *data, u8 len)
 {
@@ -175,6 +187,10 @@ user_esp_now_init(void)
 
 /************************************************************************/
 
+/*
+ * 函数：user_esp_now_set_mac_current
+ * 说明：设置虚拟MAC地址
+ */
 void ICACHE_FLASH_ATTR
 user_esp_now_set_mac_current(void)
 {

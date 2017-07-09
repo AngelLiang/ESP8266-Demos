@@ -15,13 +15,14 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 | GPIO_app| 定时设置GPIO和GPIO的中断处理函数 |
 | sntp_app | SNTP使用示例工程 |
 | SmartConfig+WiFi_app | 上电先进入快速连接模式，之后自动连接WiFi工程 |
+| esp-now_app | ESP-NOW使用示例工程，分为slave和controller两部分 |
+
 
 # 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
 2. 然后拷贝相关工程文件夹（比如ESP826-cJSON-demo）到主目录，类似于ESP8266_NONOS_SDK/examples里面的工程文件夹；
 3. 最后编译下载即可。
-
 
 
 # cJSON_app
@@ -37,7 +38,6 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 相关博客：http://blog.csdn.net/yannanxiu/article/details/52713746
 
 
-
 # sniffer_app
 
 ESP8266使用sniffer获取周围设备的MAC地址。
@@ -47,3 +47,9 @@ ESP8266使用sniffer获取周围设备的MAC地址。
 ![ESP826-sniffer-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/sniffer.jpg)
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/72778688
+
+
+# esp-now_app
+
+使用ESP-NOW示例工程，分为slave和controller两部分代码，需要分别烧录到两个ESP8266。
+
