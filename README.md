@@ -16,6 +16,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 | sntp_app | SNTP使用示例工程 |
 | SmartConfig+WiFi_app | 上电先进入快速连接模式，之后自动连接WiFi工程 |
 | esp-now_app | ESP-NOW使用示例工程，分为slave和controller两部分 |
+| ir_app | 使用IR接口例程 |
 
 
 # 使用步骤
