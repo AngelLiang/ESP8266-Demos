@@ -280,5 +280,16 @@ cJSON_test(void)
     /* Now some samplecode for building objects concisely: */
     create_objects();
 
+    u8* data = "{\"hello\":\"world\",\"number\":12345}";
+    cJSON * root = cJSON_Parse(data);
+    if(NULL==root){
+    	os_printf("\r\nparse error!\r\n");
+    }
+    cJSON *hello = cJSON_GetObjectItemCaseSensitive(root, "hello");
+    cJSON *number = cJSON_GetObjectItemCaseSensitive(root, "number");
+    if (cJSON_IsNumber(number)){
+      os_printf("number: %d\r\n", number->valueint);
+    }
+
     return 0;
 }

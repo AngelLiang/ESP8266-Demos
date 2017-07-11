@@ -364,7 +364,6 @@ parse_number(cJSON * const item, parse_buffer * const input_buffer)
     int number = 0;
     unsigned char *after_end = NULL;
     unsigned char number_c_string[64];
-    //unsigned char decimal_point = get_decimal_point();
     size_t i = 0;
 
     if ((input_buffer == NULL) || (input_buffer->content == NULL))
@@ -389,17 +388,8 @@ parse_number(cJSON * const item, parse_buffer * const input_buffer)
             case '7':
             case '8':
             case '9':
-            case '+':
-            case '-':
-            case 'e':
-            case 'E':
                 number_c_string[i] = buffer_at_offset(input_buffer)[i];
                 break;
-#if 0
-            case '.':
-                number_c_string[i] = decimal_point;
-                break;
-#endif
             default:
                 goto loop_end;
         }
@@ -407,15 +397,12 @@ parse_number(cJSON * const item, parse_buffer * const input_buffer)
 
 loop_end:
     number_c_string[i] = '\0';
-    //number = atoi(number_c_string);
-#if 0
-    number = strtod((const char*)number_c_string, (char**)&after_end);
-    if (number_c_string == after_end)
-    {
-        return false; /* parse_error */
+
+    if(0 == i){
+    	return false;
     }
-#endif
-    item->valuedouble = number;
+
+    number = atoi(number_c_string);
 
     /* use saturation in case of overflow */
     if (number >= INT_MAX)
@@ -433,11 +420,10 @@ loop_end:
 
     item->type = cJSON_Number;
 
-    input_buffer->offset += (size_t)(after_end - number_c_string);
+    //input_buffer->offset += (size_t)(after_end - number_c_string);
+    input_buffer->offset += (size_t)i;
 
-    //return true;
-
-    return false;
+    return true;
 }
 
 #endif
@@ -616,14 +602,12 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
         length = os_sprintf((char*)number_buffer, "%1.15g", d);
 
-#ifndef USE_IN_ESP8266
         /* Check whether the original double can be recovered */
         if ((sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
         {
             /* If not, print with 17 decimal places of precision */
             length = os_sprintf((char*)number_buffer, "%1.17g", d);
         }
-#endif
     }
 
     /* os_sprintf failed or buffer overrun occured */
@@ -664,13 +648,11 @@ static cJSON_bool ICACHE_FLASH_ATTR
 print_number(const cJSON * const item, printbuffer * const output_buffer)
 {
     unsigned char *output_pointer = NULL;
-    //double d = item->valuedouble;
     int d = item->valueint;
     int length = 0;
     size_t i = 0;
     unsigned char number_buffer[26]; /* temporary buffer to print the number into */
     unsigned char decimal_point = get_decimal_point();
-    //double test;
 
     if (output_buffer == NULL)
     {
@@ -687,14 +669,6 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
         //length = os_sprintf((char*)number_buffer, "%1.15g", d);
     	length = os_sprintf((char*)number_buffer, "%d", d);
-#if 0
-        /* Check whether the original double can be recovered */
-        if ((sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
-        {
-            /* If not, print with 17 decimal places of precision */
-            length = os_sprintf((char*)number_buffer, "%1.17g", d);
-        }
-#endif
     }
 
     /* os_sprintf failed or buffer overrun occured */
@@ -714,14 +688,6 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
      * dependent decimal point with '.' */
     for (i = 0; i < ((size_t)length); i++)
     {
-#if 0
-        if (number_buffer[i] == decimal_point)
-        {
-            output_pointer[i] = '.';
-            continue;
-        }
-#endif
-
         output_pointer[i] = number_buffer[i];
     }
 
@@ -1048,7 +1014,7 @@ print_string_ptr(const unsigned char * const input, printbuffer * const output_b
         {
             return false;
         }
-        strcpy((char*)output, "\"\"");
+        os_strcpy((char*)output, "\"\"");
 
         return true;
     }
@@ -1478,7 +1444,7 @@ print_value(const cJSON * const item, printbuffer * const output_buffer)
             {
                 return false;
             }
-            strcpy((char*)output, "null");
+            os_strcpy((char*)output, "null");
             return true;
 
         case cJSON_False:
@@ -1487,7 +1453,7 @@ print_value(const cJSON * const item, printbuffer * const output_buffer)
             {
                 return false;
             }
-            strcpy((char*)output, "false");
+            os_strcpy((char*)output, "false");
             return true;
 
         case cJSON_True:
@@ -1496,7 +1462,7 @@ print_value(const cJSON * const item, printbuffer * const output_buffer)
             {
                 return false;
             }
-            strcpy((char*)output, "true");
+            os_strcpy((char*)output, "true");
             return true;
 
         case cJSON_Number:
