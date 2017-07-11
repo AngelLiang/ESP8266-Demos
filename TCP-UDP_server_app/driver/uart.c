@@ -22,9 +22,10 @@
  *
  */
 
+#include "../../TCP-UDP_server_app/include/driver/uart.h"
+
 #include "ets_sys.h"
 #include "osapi.h"
-#include "driver/uart.h"
 #include "osapi.h"
 #include "driver/uart_register.h"
 #include "mem.h"

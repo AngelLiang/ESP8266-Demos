@@ -25,7 +25,7 @@
 #ifndef UART_APP_H
 #define UART_APP_H
 
-#include "uart_register.h"
+#include "../../../TCP-UDP_server_app/include/driver/uart_register.h"
 #include "eagle_soc.h"
 #include "c_types.h"
 

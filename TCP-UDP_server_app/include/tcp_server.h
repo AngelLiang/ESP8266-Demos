@@ -11,7 +11,7 @@
 #include "c_types.h"
 
 /* TCP Server ≥ı ºªØ */
-extern void tcp_server_init(uint32 port);
+extern void tcp_server_init(u32 port);
 
 #endif /* _TCP_SERVER_H_ */
 
