@@ -44,6 +44,10 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 u8* pdata = "{\"hello\":\"world\"}";
 cJSON *root = cJSON_Parse(pdata);
 print_preallocated(root);
+cJSON *hello = cJSON_GetObjectItemCaseSensitive(root, "hello");
+if (cJSON_IsString(hello)){
+  os_printf("hello %s!\r\n", hello->valuestring);   // 打印「hello world!」
+}
 cJSON_Delete(root);
 ```
 
