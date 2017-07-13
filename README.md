@@ -22,6 +22,6 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 # 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
-2. 然后拷贝相关工程文件夹（比如ESP826-cJSON-demo）到主目录，类似于ESP8266_NONOS_SDK/examples里面的工程文件夹；
+2. 然后下载并拷贝相关工程文件夹（比如cJSON_app）到主目录，用法类似于ESP8266_NONOS_SDK/examples里面的工程；
 3. 最后编译下载即可。
 
