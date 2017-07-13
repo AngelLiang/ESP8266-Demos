@@ -1,7 +1,7 @@
 /*
  * tcp_server.c
  *
- *  Created on: 2017Äê7ÔÂ3ÈÕ
+ *  Created on: 2017å¹´7æœˆ3æ—¥
  *      Author: Administrator
  */
 
@@ -19,10 +19,10 @@ static u8 g_tcp_buff[TCP_BUFF_SIZE];
 
 
 /*
- * º¯Êý£ºtcp_server_sent_cb
- * ²ÎÊý£ºvoid *arg - Á¬½Ó½á¹¹Ìå
- * ·µ»Ø£ºvoid
- * ËµÃ÷£ºTCP Server·¢ËÍ»Øµ÷
+ * å‡½æ•°ï¼štcp_server_sent_cb
+ * å‚æ•°ï¼švoid *arg - è¿žæŽ¥ç»“æž„ä½“
+ * è¿”å›žï¼švoid
+ * è¯´æ˜Žï¼šTCP Serverå‘é€å›žè°ƒ
  */
 static void ICACHE_FLASH_ATTR
 tcp_server_sent_cb(void *arg)
@@ -31,10 +31,10 @@ tcp_server_sent_cb(void *arg)
 }
 
 /*
- * º¯Êý£ºtcp_server_discon_cb
- * ²ÎÊý£ºvoid *arg - Á¬½Ó½á¹¹Ìå
- * ·µ»Ø£ºvoid
- * ËµÃ÷£ºTCP Server¶Ï¿ª»Øµ÷
+ * å‡½æ•°ï¼štcp_server_discon_cb
+ * å‚æ•°ï¼švoid *arg - è¿žæŽ¥ç»“æž„ä½“
+ * è¿”å›žï¼švoid
+ * è¯´æ˜Žï¼šTCP Serveræ–­å¼€å›žè°ƒ
  */
 static void ICACHE_FLASH_ATTR
 tcp_server_discon_cb(void *arg)
@@ -43,12 +43,12 @@ tcp_server_discon_cb(void *arg)
 }
 
 /*
- * º¯Êý£ºtcp_server_recv
- * ²ÎÊý£ºvoid *arg - Á¬½Ó½á¹¹Ìå
- * 	   char *pdata - ½ÓÊÕÊý¾ÝÊ×µØÖ·
- * 	   unsigned short len - ½ÓÊÕÊý¾Ý³¤¶È
- * ·µ»Ø£ºvoid
- * ËµÃ÷£ºTCP Server½ÓÊÕ»Øµ÷
+ * å‡½æ•°ï¼štcp_server_recv
+ * å‚æ•°ï¼švoid *arg - è¿žæŽ¥ç»“æž„ä½“
+ * 	   char *pdata - æŽ¥æ”¶æ•°æ®é¦–åœ°å€
+ * 	   unsigned short len - æŽ¥æ”¶æ•°æ®é•¿åº¦
+ * è¿”å›žï¼švoid
+ * è¯´æ˜Žï¼šTCP ServeræŽ¥æ”¶å›žè°ƒ
  */
 static void ICACHE_FLASH_ATTR
 tcp_server_recv(void *arg, char *pdata, unsigned short len)
@@ -58,14 +58,14 @@ tcp_server_recv(void *arg, char *pdata, unsigned short len)
 
 	// TODO:
 
-	espconn_send(pesp_conn, g_tcp_buff, send_data_len);
+	//espconn_send(pesp_conn, g_tcp_buff, send_data_len);
 }
 
 /*
- * º¯Êý£ºtcp_server_listen
- * ²ÎÊý£ºvoid *arg - Á¬½Ó½á¹¹Ìå
- * ·µ»Ø£ºvoid
- * ËµÃ÷£ºTCP Server¼àÌý
+ * å‡½æ•°ï¼štcp_server_listen
+ * å‚æ•°ï¼švoid *arg - è¿žæŽ¥ç»“æž„ä½“
+ * è¿”å›žï¼švoid
+ * è¯´æ˜Žï¼šTCP Serverç›‘å¬
  */
 static void ICACHE_FLASH_ATTR
 tcp_server_listen(void *arg)
@@ -80,24 +80,25 @@ tcp_server_listen(void *arg)
 }
 
 /*
- * º¯Êý£ºtcp_server_init
- * ²ÎÊý£ºvoid *arg - Á¬½Ó½á¹¹Ìå
- * ·µ»Ø£ºvoid
- * ËµÃ÷£ºTCP Server³õÊ¼»¯
+ * å‡½æ•°ï¼štcp_server_init
+ * å‚æ•°ï¼švoid *arg - è¿žæŽ¥ç»“æž„ä½“
+ * è¿”å›žï¼švoid
+ * è¯´æ˜Žï¼šTCP Serveråˆå§‹åŒ–
  */
 void ICACHE_FLASH_ATTR
 tcp_server_init(uint32 port)
 {
-	static struct espconn s_tcp_server;
-	static esp_tcp s_esptcp;
+    static struct espconn s_tcp_server;
+    static esp_tcp s_esptcp;
 
 	s_tcp_server.type = ESPCONN_TCP;
 	s_tcp_server.state = ESPCONN_NONE;
 	s_tcp_server.proto.tcp = &s_esptcp;
 	s_tcp_server.proto.tcp->local_port = port;
-    espconn_regist_connectcb(&s_tcp_server, tcp_server_listen);
+	espconn_regist_connectcb(&s_tcp_server, tcp_server_listen);
 
     espconn_accept(&s_tcp_server);
-
+	espconn_regist_time(&s_tcp_server, 60, 0);			// TCP server è¶…æ—¶æ—¶é—´
+	
     os_printf("tcp_server_init\r\n");
 }
