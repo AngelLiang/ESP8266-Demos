@@ -5,12 +5,19 @@
  *      Author: Minh
  */
 
-#ifndef USER_WIFI_H_
-#define USER_WIFI_H_
+#ifndef _USER_WIFI_H_
+#define _USER_WIFI_H_
 
 #include "os_type.h"
 
-void wifi_connect(void);
+#define WiFi_CHECK_TIMER_ENABLE			1
+#define WiFi_LED_STATUS_TIMER_ENABLE	1
 
+extern void wifi_connect(void);
 
-#endif /* USER_WIFI_H_ */
+extern void wifi_status_led_init(void);
+extern void user_smartconfig_led_timer_init(void);
+extern void user_smartconfig_led_timer_stop(void);
+extern u32 get_station_ip(void);
+
+#endif /* _USER_WIFI_H_ */

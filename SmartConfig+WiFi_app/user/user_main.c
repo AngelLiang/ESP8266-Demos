@@ -98,9 +98,7 @@ print_chip_info(void)
     os_printf("free heap size:%d\r\n", system_get_free_heap_size());
     //MAC地址
     if(wifi_get_macaddr(STATION_IF, macAddr)){	//在init_done_cb_init函数调用才正常
-    	os_printf("MAC:"MACSTR"\r\n",MAC2STR(macAddr));
-    }else{
-    	os_printf("Get MAC fail!\r\n");
+    	os_printf("Station MAC:"MACSTR"\r\n",MAC2STR(macAddr));
     }
     //内存信息
     os_printf("meminfo:\r\n");
