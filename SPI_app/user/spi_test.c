@@ -29,8 +29,16 @@
 #include "driver/spi.h"
 #include "driver/spi_interface.h"
 
-//#define SPI_TEST_MASTER
-#define SPI_TEST_SLAVE
+
+/*
+ * ESP8266 SPI 主机通信格式为 命令+地址+读/写数据
+ * 命令：必须存在。长度1~16位
+ * 地址：可选。长度0~32位
+ * 数据读写：可选。长度0~512位（64字节）
+ */
+
+#define SPI_TEST_MASTER
+//#define SPI_TEST_SLAVE
 
 
 // Show the spi registers.
@@ -61,6 +69,8 @@ void __ShowRegValue(const char * func, uint32_t line)
     os_printf(" SPI_SLAVE1    [0x%08x]\r\n", READ_PERI_REG(SPI_SLAVE1(SpiNum_HSPI)));
     os_printf(" SPI_SLAVE2    [0x%08x]\r\n", READ_PERI_REG(SPI_SLAVE2(SpiNum_HSPI)));
 
+    // 主机使用W0开始的SPI缓存区
+    // 从机使用W8开始的缓存区
     for (i = 0; i < 16; ++i) {
         os_printf(" ADDR[0x%08x],Value[0x%08x]\r\n", regAddr, READ_PERI_REG(regAddr));
         regAddr += 4;
@@ -99,8 +109,6 @@ void spi_slave_isr_sta(void *para)
         } else if (regvalue & SPI_SLV_RD_BUF_DONE) {
             // TO DO 
             os_printf("spi_slave_isr_sta : SPI_SLV_RD_BUF_DONE\n\r");
-
-            // TODO:
         }
 
         if (regvalue & SPI_SLV_RD_STA_DONE) {
@@ -116,7 +124,8 @@ void spi_slave_isr_sta(void *para)
         if ((regvalue & SPI_TRANS_DONE) && ((regvalue & 0xf) == 0)) {
             os_printf("spi_slave_isr_sta : SPI_TRANS_DONE\n\r");
         }
-        //SHOWSPIREG(SpiNum_HSPI);
+
+        SHOWSPIREG(SpiNum_HSPI);
 
     }
 }
@@ -139,7 +148,7 @@ spi_master_test()
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, 2);//configure io to spi mode
 
     SPIInit(SpiNum_HSPI, &hSpiAttr);
-    uint32_t value = 0xD3D4D5D6;
+    uint32_t addr = 0xD3D4D5D6;
     uint32_t sendData[8] ={ 0 };
     SpiData spiData;
 
@@ -148,18 +157,20 @@ spi_master_test()
 //  Test 8266 slave.Communication format: 1byte command + 1bytes address + x bytes Data.
     os_printf("\r\n Master send 32 bytes data to slave(8266)\r\n");
     os_memset(sendData, 0, sizeof(sendData));
-    sendData[0] = 0x55565758;
-    sendData[1] = 0x595a5b5c;
-    sendData[2] = 0x5d5e5f60;
-    sendData[3] = 0x61626364;
-    sendData[4] = 0x65666768;
-    sendData[5] = 0x696a6b6c;
-    sendData[6] = 0x6d6e6f70;
-    sendData[7] = 0x71727374;
+
+    sendData[0] = 0x00010203;
+    sendData[1] = 0x04050607;
+    sendData[2] = 0x08090A0B;
+    sendData[3] = 0x0C0D0E0F;
+    sendData[4] = 0x10111213;
+    sendData[5] = 0x14151617;
+    sendData[6] = 0x18191A1B;
+    sendData[7] = 0x1C1D1E1F;
+
     spiData.cmd = MASTER_WRITE_DATA_TO_SLAVE_CMD;
     spiData.cmdLen = 1;
-    spiData.addr = &value;
-    spiData.addrLen = 4;
+    spiData.addr = &addr;
+    spiData.addrLen = 1;
     spiData.data = sendData;
     spiData.dataLen = 32;
     SPIMasterSendData(SpiNum_HSPI, &spiData);
@@ -168,35 +179,39 @@ spi_master_test()
     os_printf("\r\n Master receive 24 bytes data from slave(8266)\r\n");
     spiData.cmd = MASTER_READ_DATA_FROM_SLAVE_CMD;
     spiData.cmdLen = 1;
-    spiData.addr = &value;
-    spiData.addrLen = 4;
+    spiData.addr = &addr;
+    spiData.addrLen = 1;
     spiData.data = sendData;
-    spiData.dataLen = 24;
+    spiData.dataLen = 32;
+
+    // 应该会打印Slave函数里设置的数据
     os_memset(sendData, 0, sizeof(sendData));
     SPIMasterRecvData(SpiNum_HSPI, &spiData);
-    os_printf(" Recv Slave data0[0x%08x]\r\n", sendData[0]);
-    os_printf(" Recv Slave data1[0x%08x]\r\n", sendData[1]);
-    os_printf(" Recv Slave data2[0x%08x]\r\n", sendData[2]);
-    os_printf(" Recv Slave data3[0x%08x]\r\n", sendData[3]);
-    os_printf(" Recv Slave data4[0x%08x]\r\n", sendData[4]);
-    os_printf(" Recv Slave data5[0x%08x]\r\n", sendData[5]);
+    os_printf(" Recv Slave data0[0x%08x]\r\n", sendData[0]);	// [0x35343332]
+    os_printf(" Recv Slave data1[0x%08x]\r\n", sendData[1]);	// [0x39383736]
+    os_printf(" Recv Slave data2[0x%08x]\r\n", sendData[2]);	// [0x3d3c3b3a]
+    os_printf(" Recv Slave data3[0x%08x]\r\n", sendData[3]);	// [0x11103f3e]
+    os_printf(" Recv Slave data4[0x%08x]\r\n", sendData[4]);	// [0x15141312]
+    os_printf(" Recv Slave data5[0x%08x]\r\n", sendData[5]);	// [0x19181716]
+    os_printf(" Recv Slave data6[0x%08x]\r\n", sendData[6]);	// [0x1d1c1b1a]
+    os_printf(" Recv Slave data7[0x%08x]\r\n", sendData[7]);	// [0x21201f1e]
 
-    value = SPIMasterRecvStatus(SpiNum_HSPI);
-    os_printf("\r\n Master read slave(8266) status[0x%02x]\r\n", value);
+    addr = SPIMasterRecvStatus(SpiNum_HSPI);
+    os_printf("\r\n Master read slave(8266) status[0x%02x]\r\n", addr);
 
     SPIMasterSendStatus(SpiNum_HSPI, 0x99);
     os_printf("\r\n Master write status[0x99] to slave(8266).\r\n");
     //SHOWSPIREG(SpiNum_HSPI);
 
 //  Test others slave.Communication format:0bytes command + 0 bytes address + x bytes Data
-#if 1
-    uint32_t addr = NULL;
+#if 0
+    u32 addr2 = 0x06;
     os_printf("\r\n Master send 4 bytes data to slave\r\n");
     os_memset(sendData, 0, sizeof(sendData));
     sendData[0] = 0x2D3E4F50;
     spiData.cmd = MASTER_WRITE_DATA_TO_SLAVE_CMD;
     spiData.cmdLen = 0;
-    spiData.addr = &addr;
+    spiData.addr = &addr2;
     spiData.addrLen = 0;
     spiData.data = sendData;
     spiData.dataLen = 4;
@@ -205,7 +220,7 @@ spi_master_test()
     os_printf("\r\n Master receive 4 bytes data from slaver\n");
     spiData.cmd = MASTER_READ_DATA_FROM_SLAVE_CMD;
     spiData.cmdLen = 0;
-    spiData.addr = &addr;
+    spiData.addr = &addr2;
     spiData.addrLen = 0;
     spiData.data = sendData;
     spiData.dataLen = 4;
@@ -217,6 +232,7 @@ spi_master_test()
     // TODO:
 
 }
+
 
 // Test spi slave interfaces.
 void ICACHE_FLASH_ATTR
@@ -248,10 +264,12 @@ spi_slave_test()
         |SpiIntSrc_RdBufDone);
     spiInt.isrFunc = spi_slave_isr_sta;
     SPIIntCfg(SpiNum_HSPI, &spiInt);
-   // SHOWSPIREG(SpiNum_HSPI);
     
     SPISlaveRecvData(SpiNum_HSPI);
-    uint32_t sndData[8] = { 0 };
+    //SHOWSPIREG(SpiNum_HSPI);
+
+    // Master会收到下面的数据
+    u32 sndData[8] = { 0 };
     sndData[0] = 0x35343332;
     sndData[1] = 0x39383736;
     sndData[2] = 0x3d3c3b3a;
