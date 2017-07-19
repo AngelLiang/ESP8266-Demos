@@ -32,5 +32,8 @@
 #endif
 
 
+/* 调试的时候可以禁用smartconfig，免得每次上电都要等20秒 */
+#define SMARTCONFIG_DISABLE		0
+
 #endif
 

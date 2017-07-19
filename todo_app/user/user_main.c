@@ -83,11 +83,11 @@ user_rf_pre_init(void)
 void ICACHE_FLASH_ATTR
 print_chip_info(void)
 {
-    //保存芯片MAC地址
-    u8 macAddr[6] = {0};
+	//保存芯片MAC地址
+	u8 macAddr[6] = {0};
 
-    os_printf("\n*********************************\r\n");
-	  //SDK版本信息
+	os_printf("\n*********************************\r\n");
+	//SDK版本信息
     os_printf("SDK version:%s\r\n", system_get_sdk_version());
     //芯片序列号
     os_printf("chip ID:%d\r\n", system_get_chip_id());
@@ -97,9 +97,10 @@ print_chip_info(void)
     os_printf("free heap size:%d\r\n", system_get_free_heap_size());
     //MAC地址
     if(wifi_get_macaddr(STATION_IF, macAddr)){	//在init_done_cb_init函数调用才正常
-    	os_printf("MAC:"MACSTR"\r\n",MAC2STR(macAddr));
-    }else{
-    	os_printf("Get MAC fail!\r\n");
+    	os_printf("Station MAC:"MACSTR"\r\n", MAC2STR(macAddr));
+    }
+    if(wifi_get_macaddr(SOFTAP_IF, macAddr)){	//在init_done_cb_init函数调用才正常
+    	os_printf("softAP MAC:"MACSTR"\r\n", MAC2STR(macAddr));
     }
     //内存信息
     os_printf("meminfo:\r\n");
