@@ -28,6 +28,7 @@
 
 #include "driver/uart.h"
 #include "spi_test.h"
+#include "oled.h"
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -112,8 +113,8 @@ init_done_cb_init(void)
     print_chip_info();
 
 
-    //user_spi_test();
-    spi_interface_test();
+    //spi_interface_test();
+    oled_test_init();
 }
 
 
