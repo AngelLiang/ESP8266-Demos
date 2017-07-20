@@ -14,8 +14,8 @@
 
 #include "user_spi.h"
 
-#define HARD_SPI
-//#define SOFT_SPI
+//#define HARD_SPI
+#define SOFT_SPI
 
 
 #define MISO_PIN	12
@@ -34,11 +34,17 @@
 	#define CS_1()		GPIO_OUTPUT_SET(CS_PIN, 1)
 
 	#define SCK_0()		GPIO_OUTPUT_SET(SCK_PIN, 0)
-	#define SCK_1()		GPIO_OUTPUT_SET(SCK_PIN, 0)
+	#define SCK_1()		GPIO_OUTPUT_SET(SCK_PIN, 1)
 
 	#define MISO_IS_HIGH()	(GPIO_INPUT_GET(MISO_PIN) != 0)
 #endif
 
+
+void ICACHE_FLASH_ATTR
+user_spi_delay_us(u16 us)
+{
+	os_delay_us(us);
+}
 
 
 /*
@@ -112,13 +118,13 @@ user_spi_read_byte(void)
     CS_0();
 	for (i = 0; i < 8; i++){
 		SCK_0();
-		//TM7705_Delay();
+		//user_spi_delay_us(50);
 		read = read<<1;
 		if (MISO_IS_HIGH()){
 			read++;
 		}
 		SCK_1();
-		//TM7705_Delay();
+		//user_spi_delay_us(50);
 	}
 	CS_1();
 #endif
@@ -223,9 +229,8 @@ user_spi_write_byte(u8 data)
 		}
 		SCK_0();
 		data <<= 1;
-		//TM7705_Delay();
+		//user_spi_delay_us(50);
 		SCK_1();
-		//TM7705_Delay();
 	}
 	CS_1();
 #endif
