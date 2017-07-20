@@ -1,6 +1,6 @@
 # ESP8266-Demos
 
-ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
+ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 | 工程名称 | 说明 |
 |---|---|
@@ -19,7 +19,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0
 | TCP-SSL_client_app | TCP+SSL客户端示例 |
 | wifi_cb_app | 连接Wi-Fi后回调事件功能 |
 
-
+部分app文件夹下有说明文件（README.md），img文件夹下有部分app效果图。
 
 # 使用步骤
 
