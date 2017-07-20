@@ -75,7 +75,6 @@ void __ShowRegValue(const char * func, uint32_t line)
         os_printf(" ADDR[0x%08x],Value[0x%08x]\r\n", regAddr, READ_PERI_REG(regAddr));
         regAddr += 4;
     }
-
 }
 
 

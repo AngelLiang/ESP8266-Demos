@@ -22,12 +22,14 @@
  *
  */
 
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "user_interface.h"
 
 #include "driver/uart.h"
 #include "spi_test.h"
+#include "TM7705.h"
 #include "oled.h"
 
 /******************************************************************************
@@ -112,8 +114,8 @@ init_done_cb_init(void)
 {
     print_chip_info();
 
-
     //spi_interface_test();
+    //user_TM7705_test_init();
     oled_test_init();
 }
 

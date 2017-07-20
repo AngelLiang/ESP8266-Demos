@@ -12,6 +12,8 @@
 #include "driver/spi.h"
 #include "driver/spi_interface.h"
 
+#include "user_spi.h"
+
 /* 引脚连接
  * NodeMCU - ESP8266 - Function - OLED
  * D5 - GPIO14 - HSCLK - CLK
@@ -47,21 +49,7 @@ u8 init_data[] = {
 void ICACHE_FLASH_ATTR
 oled_pin_init(void)
 {
-
-    SpiAttr hSpiAttr;
-    hSpiAttr.bitOrder = SpiBitOrder_MSBFirst;
-    hSpiAttr.speed = SpiSpeed_0_5MHz;
-    hSpiAttr.mode = SpiMode_Master;
-    hSpiAttr.subMode = SpiSubMode_0;
-
-    // Init HSPI GPIO
-    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, 2);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, 2);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, 2);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, 2);
-
-    SPIInit(SpiNum_HSPI, &hSpiAttr);
+	user_spi_pin_init();
 
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
@@ -75,16 +63,7 @@ oled_pin_init(void)
 static void ICACHE_FLASH_ATTR
 oled_write_byte(u8 data)
 {
-	SpiData spiData;
-	u32 send_data[1] = {data};
-
-    spiData.cmd = MASTER_WRITE_DATA_TO_SLAVE_CMD;
-    spiData.cmdLen = 0;
-    spiData.addr = NULL;
-    spiData.addrLen = 0;
-    spiData.data = send_data;
-    spiData.dataLen = 1;
-    SPIMasterSendData(SpiNum_HSPI, &spiData);
+	user_spi_write_byte(data);
 }
 
 /*
@@ -132,7 +111,7 @@ oled_clear_screen(void)
 void ICACHE_FLASH_ATTR
 lcd_address(u16 page, u16 column)
 {
-	oled_write_cmd(0xb0 + column);	//设置页地址
+	oled_write_cmd(0xb0 + column);			//设置页地址
 	oled_write_cmd(((page & 0xf0) >> 4) | 0x10);	// 设置列地址低4位
 	oled_write_cmd((page & 0x0f) | 0x00);	// 设置列地址高4位
 }
