@@ -54,7 +54,7 @@ bsp_DelayMS(u16 n)
 
 
 void ICACHE_FLASH_ATTR
-TM7705_spi_init(void)
+TM7705_pin_init(void)
 {
 	user_spi_pin_init();
     TM_7705_GPIO_INIT();
@@ -423,11 +423,24 @@ bsp_InitTM7705(void)
 
 /*********************************************************************/
 
+static int volt1, volt2;
+
+s16 ICACHE_FLASH_ATTR
+get_tm7705_adc1(void)
+{
+	return volt1;
+}
+
+s16 ICACHE_FLASH_ATTR
+get_tm7705_adc2(void)
+{
+	return volt2;
+}
+
 static void ICACHE_FLASH_ATTR
 timer_cb(void *arg)
 {
 	u16 adc1 = 0, adc2 = 0;
-	int volt1, volt2;
 
 #if defined(ADC1)
 	adc1 = TM7705_ReadAdc(1);
@@ -439,9 +452,10 @@ timer_cb(void *arg)
 	volt2 = ((s32)adc2 * 5000) / 65535;
 #endif
 
+#if 1
 	os_printf("CH1=%5ld (%5dmV)\tCH2=%5ld (%5dmV)\r\n",
 			(long int)adc1, volt1, (long int)adc2, volt2);
-
+#endif
 }
 
 /*
@@ -455,37 +469,34 @@ user_TM7705_read_timer_init(void)
 
     os_timer_disarm(&s_timer);
     os_timer_setfn(&s_timer, timer_cb , NULL);
-    os_timer_arm(&s_timer, (3*1000), 1);
+    os_timer_arm(&s_timer, (1*1000), 1);
 
     os_printf("user_TM7705_read_timer_init\r\n");
+}
+
+void ICACHE_FLASH_ATTR
+user_tm7705_init(void)
+{
+	TM7705_pin_init();
+	bsp_InitTM7705();
+
+#if defined(ADC1)
+	TM7705_CalibSelf(1);
+	//adc = TM7705_ReadAdc(1);
+#endif
+
+#if defined(ADC2)
+	TM7705_CalibSelf(2);
+	//adc = TM7705_ReadAdc(2);
+#endif
+
+	user_TM7705_read_timer_init();
 }
 
 
 void ICACHE_FLASH_ATTR
 user_TM7705_test_init(void)
 {
-	u16 adc = 0;
-
 	wifi_set_opmode(NULL_MODE);
-	system_soft_wdt_stop();
-
-	TM7705_spi_init();
-
-	bsp_InitTM7705();
-
-#if defined(ADC1)
-	TM7705_CalibSelf(1);
-	adc = TM7705_ReadAdc(1);
-	os_printf("adc:0x%x\r\n", adc);
-#endif
-
-#if defined(ADC2)
-	adc = 0;
-	TM7705_CalibSelf(2);
-	adc = TM7705_ReadAdc(2);
-	os_printf("adc:0x%x\r\n", adc);
-#endif
-
-	user_TM7705_read_timer_init();
-	system_soft_wdt_restart();
+	user_tm7705_init();
 }
