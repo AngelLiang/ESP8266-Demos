@@ -10,23 +10,25 @@
 #include "user_interface.h"
 #include "driver/spi.h"
 #include "driver/spi_interface.h"
+
+#include "user_spi.h"
 #include "TM7705.h"
 
-
-//#define SOFT_SPI
-#define HARD_SPI
+/* 建议使用SOFT_SPI */
 
 
 #define ADC1
-//#define ADC2
+#define ADC2
 
 #define RESET_PIN	4
 #define DRDY_PIN	5
 
-#define DO_PIN		12
-#define DI_PIN		13
-#define SCK_PIN		14
-#define CS_PIN		15
+#define TM_7705_GPIO_INIT()		do{\
+			PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);\
+			PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);\
+			PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO5_U);\
+			GPIO_DIS_OUTPUT(DRDY_PIN);\
+		}while(0)
 
 #define RESET_0()	GPIO_OUTPUT_SET(RESET_PIN, 0)
 #define RESET_1()	GPIO_OUTPUT_SET(RESET_PIN, 1)
@@ -34,72 +36,12 @@
 #define DRDY_IS_LOW()	(GPIO_INPUT_GET(DRDY_PIN) == 0)
 
 
-#define GPIO_INIT()		do{\
-		PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);\
-		PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);\
-		PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO5_U);\
-		GPIO_DIS_OUTPUT(DRDY_PIN);\
-					}while(0)
-
 #if defined(HARD_SPI)
 	#define CS_0()
 	#define CS_1()
 #elif defined(SOFT_SPI)
-	#define DI_0()		GPIO_OUTPUT_SET(DI_PIN, 0)
-	#define DI_1()		GPIO_OUTPUT_SET(DI_PIN, 1)
 
-	#define CS_0()		GPIO_OUTPUT_SET(CS_PIN, 0)
-	#define CS_1()		GPIO_OUTPUT_SET(CS_PIN, 1)
-
-	#define SCK_0()		GPIO_OUTPUT_SET(SCK_PIN, 0)
-	#define SCK_1()		GPIO_OUTPUT_SET(SCK_PIN, 0)
-
-	#define DO_IS_HIGH()	(GPIO_INPUT_GET(DO_PIN) != 0)
 #endif
-
-#if defined(HARD_SPI)
-
-// Show the spi registers.
-#define SHOWSPIREG(i) __ShowRegValue(__func__, __LINE__);
-
-void __ShowRegValue(const char * func, uint32_t line)
-{
-
-    int i;
-    uint32_t regAddr = 0x60000140; // SPI--0x60000240, HSPI--0x60000140;
-    os_printf("\r\n FUNC[%s],line[%d]\r\n", func, line);
-    os_printf(" SPI_ADDR      [0x%08x]\r\n", READ_PERI_REG(SPI_ADDR(SpiNum_HSPI)));
-    os_printf(" SPI_CMD       [0x%08x]\r\n", READ_PERI_REG(SPI_CMD(SpiNum_HSPI)));
-    os_printf(" SPI_CTRL      [0x%08x]\r\n", READ_PERI_REG(SPI_CTRL(SpiNum_HSPI)));
-    os_printf(" SPI_CTRL2     [0x%08x]\r\n", READ_PERI_REG(SPI_CTRL2(SpiNum_HSPI)));
-    os_printf(" SPI_CLOCK     [0x%08x]\r\n", READ_PERI_REG(SPI_CLOCK(SpiNum_HSPI)));
-    os_printf(" SPI_RD_STATUS [0x%08x]\r\n", READ_PERI_REG(SPI_RD_STATUS(SpiNum_HSPI)));
-    os_printf(" SPI_WR_STATUS [0x%08x]\r\n", READ_PERI_REG(SPI_WR_STATUS(SpiNum_HSPI)));
-    os_printf(" SPI_USER      [0x%08x]\r\n", READ_PERI_REG(SPI_USER(SpiNum_HSPI)));
-    os_printf(" SPI_USER1     [0x%08x]\r\n", READ_PERI_REG(SPI_USER1(SpiNum_HSPI)));
-    os_printf(" SPI_USER2     [0x%08x]\r\n", READ_PERI_REG(SPI_USER2(SpiNum_HSPI)));
-    os_printf(" SPI_PIN       [0x%08x]\r\n", READ_PERI_REG(SPI_PIN(SpiNum_HSPI)));
-    os_printf(" SPI_SLAVE     [0x%08x]\r\n", READ_PERI_REG(SPI_SLAVE(SpiNum_HSPI)));
-    os_printf(" SPI_SLAVE1    [0x%08x]\r\n", READ_PERI_REG(SPI_SLAVE1(SpiNum_HSPI)));
-    os_printf(" SPI_SLAVE2    [0x%08x]\r\n", READ_PERI_REG(SPI_SLAVE2(SpiNum_HSPI)));
-
-    // 主机使用W0开始的SPI缓存区
-    // 从机使用W8开始的缓存区
-    for (i = 0; i < 16; ++i) {
-        os_printf(" ADDR[0x%08x],Value[0x%08x]\r\n", regAddr, READ_PERI_REG(regAddr));
-        regAddr += 4;
-    }
-}
-
-void ICACHE_FLASH_ATTR
-_user_show_reg(u8 addr)
-{
-	uint32_t regAddr = 0x60000140; // SPI--0x60000240, HSPI--0x60000140;
-	regAddr += addr*4;
-	os_printf(" ADDR[0x%08x]=Value[0x%08x]\r\n", regAddr, READ_PERI_REG(regAddr));
-}
-#endif
-
 
 void ICACHE_FLASH_ATTR
 bsp_DelayMS(u16 n)
@@ -114,45 +56,8 @@ bsp_DelayMS(u16 n)
 void ICACHE_FLASH_ATTR
 TM7705_spi_init(void)
 {
-
-#if defined(HARD_SPI)
-    SpiAttr hSpiAttr;
-    hSpiAttr.bitOrder = SpiBitOrder_MSBFirst;
-    /*
-     * SpiSpeed_0_5MHz     = 160,
-     * SpiSpeed_1MHz       = 80,
-     * SpiSpeed_2MHz       = 40,
-     * SpiSpeed_5MHz       = 16,
-     * SpiSpeed_8MHz       = 10,
-     * SpiSpeed_10MHz      = 8,
-     */
-
-    hSpiAttr.speed = SpiSpeed_0_5MHz;
-    hSpiAttr.mode = SpiMode_Master;
-    hSpiAttr.subMode = SpiSubMode_0;
-
-    // Init HSPI GPIO
-    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, 2);//configure io to spi mode
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, 2);//configure io to spi mode
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, 2);//configure io to spi mode
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, 2);//configure io to spi mode
-
-    SPIInit(SpiNum_HSPI, &hSpiAttr);
-
-#elif defined(SOFT_SPI)
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
-
-    GPIO_DIS_OUTPUT(DO_PIN);
-#else
-	#error #error "Please define SPI Interface mode : SOFT_SPI or HARD_SPI"
-#endif
-
-    GPIO_INIT();
-
+	user_spi_pin_init();
+    TM_7705_GPIO_INIT();
 }
 
 /*
@@ -164,12 +69,11 @@ TM7705_spi_init(void)
 *********************************************************************************************************
 */
 static void ICACHE_FLASH_ATTR
-TM7705_Delay(void)
+TM7705_Delay_us(u16 xus)
 {
 	u16 i;
-
-	for (i = 0; i < 5; i++){
-		//os_delay_us(1);
+	for (i = 0; i < xus; i++){
+		os_delay_us(1);
 	};
 }
 
@@ -197,36 +101,26 @@ TM7705_ResetHard(void)
 *	返 回 值: 无
 *********************************************************************************************************
 */
-static uint8_t ICACHE_FLASH_ATTR
+static u8 ICACHE_FLASH_ATTR
 TM7705_Recive8Bit(void)
 {
-	uint8_t i;
-	uint8_t read = 0;
+	u8 read = 0;
+	//read = user_spi_read_byte();
 
-#if defined(HARD_SPI)
-	u32 recv_data[32];
-	SpiData spiData;
-    spiData.cmd = MASTER_READ_DATA_FROM_SLAVE_CMD;
-    spiData.cmdLen = 0;
-    spiData.addr = NULL;
-    spiData.addrLen = 0;
-    spiData.data = recv_data;
-    spiData.dataLen = 1;
-    SPIMasterRecvData(SpiNum_HSPI, &spiData);
-    read = (u8)recv_data[0];
-
-#elif defined(SOFT_SPI)
-
+#if defined(SOFT_SPI)
+	u8 i;
+	CS_0();
 	for (i = 0; i < 8; i++){
 		SCK_0();
-		TM7705_Delay();
+		TM7705_Delay_us(50);
 		read = read<<1;
-		if (DO_IS_HIGH()){
+		if (MISO_IS_HIGH()){
 			read++;
 		}
 		SCK_1();
-		TM7705_Delay();
+		TM7705_Delay_us(50);
 	}
+	CS_1();
 #endif
 
 	return read;
@@ -243,7 +137,7 @@ TM7705_Recive8Bit(void)
 static uint8_t ICACHE_FLASH_ATTR
 TM7705_ReadByte(void)
 {
-	uint8_t read;
+	u8 read;
 
 	CS_0();
 	read = TM7705_Recive8Bit();
@@ -263,27 +157,24 @@ TM7705_ReadByte(void)
 static uint16_t ICACHE_FLASH_ATTR
 TM7705_Read2Byte(void)
 {
-	uint16_t read;
+	u16 read = 0;
+#if 0
+	read = user_spi_read_2byte();
+#else
+	u8 i;
 	CS_0();
-#if defined(HARD_SPI)
-	u32 recv_data[32];
-	SpiData spiData;
-    spiData.cmd = MASTER_READ_DATA_FROM_SLAVE_CMD;
-    spiData.cmdLen = 0;
-    spiData.addr = NULL;
-    spiData.addrLen = 0;
-    spiData.data = recv_data;
-    spiData.dataLen = 2;
-    SPIMasterRecvData(SpiNum_HSPI, &spiData);
-    read = (u16)recv_data[0];
-
-#elif defined(SOFT_SPI)
-	read = TM7705_Recive8Bit();
-	read <<= 8;
-	read += TM7705_Recive8Bit();
-#endif
-
+	for (i = 0; i < 16; i++){
+		SCK_0();
+		//TM7705_Delay_us(20);
+		read = read<<1;
+		if (MISO_IS_HIGH()){
+			read++;
+		}
+		SCK_1();
+		//TM7705_Delay_us(50);
+	}
 	CS_1();
+#endif
 	return read;
 }
 
@@ -297,33 +188,25 @@ TM7705_Read2Byte(void)
 *********************************************************************************************************
 */
 static void ICACHE_FLASH_ATTR
-TM7705_Send8Bit(uint8_t _data)
+TM7705_Send8Bit(u8 data)
 {
-	uint8_t i;
-
-#if defined(HARD_SPI)
-	u32 send_data[1] = {_data};
-	SpiData spiData;
-    spiData.cmd = MASTER_WRITE_DATA_TO_SLAVE_CMD;
-    spiData.cmdLen = 0;
-    spiData.addr = NULL;
-    spiData.addrLen = 0;
-    spiData.data = send_data;
-    spiData.dataLen = 1;
-    SPIMasterSendData(SpiNum_HSPI, &spiData);
-#elif defined(SOFT_SPI)
+	//user_spi_write_byte(data);
+#if defined(SOFT_SPI)
+    u8 i;
+    CS_0();
 	for(i = 0; i < 8; i++){
-		if (_data & 0x80){
-			DI_1();
+		if (data & 0x80){
+			MOSI_1();
 		}else{
-			DI_0();
+			MOSI_0();
 		}
+		TM7705_Delay_us(50);
 		SCK_0();
-		_data <<= 1;
-		TM7705_Delay();
+		data <<= 1;
+		TM7705_Delay_us(50);
 		SCK_1();
-		TM7705_Delay();
 	}
+	CS_1();
 #endif
 }
 
@@ -337,10 +220,10 @@ TM7705_Send8Bit(uint8_t _data)
 *********************************************************************************************************
 */
 static void ICACHE_FLASH_ATTR
-TM7705_WriteByte(uint8_t _data)
+TM7705_WriteByte(u8 data)
 {
 	CS_0();
-	TM7705_Send8Bit(_data);
+	TM7705_Send8Bit(data);
 	CS_1();
 }
 
@@ -418,8 +301,62 @@ TM7705_CalibSelf(uint8_t _ch)
 		TM7705_WaitDRDY();	/* 等待内部操作完成  --- 时间较长，约180ms */
 	}
 	os_printf("TM7705_CalibSelf %d\r\n", _ch);
+}
 
+/*
+*********************************************************************************************************
+*	函 数 名: TM7705_SytemCalibZero
+*	功能说明: 启动系统校准零位. 请将AIN+ AIN-短接后，执行该函数。校准应该由主程序控制并保存校准参数。
+*			 执行完毕后。可以通过 TM7705_ReadReg(REG_ZERO_CH1) 和  TM7705_ReadReg(REG_ZERO_CH2) 读取校准参数。
+*	形    参: _ch : ADC通道，1或2
+*	返 回 值: 无
+*********************************************************************************************************
+*/
+void ICACHE_FLASH_ATTR
+TM7705_SytemCalibZero(uint8_t _ch)
+{
+	if (_ch == 1)
+	{
+		/* 校准CH1 */
+		TM7705_WriteByte(REG_SETUP | WRITE | CH_1);	/* 写通信寄存器，下一步是写设置寄存器，通道1 */
+		TM7705_WriteByte(MD_CAL_ZERO | __CH1_GAIN_BIPOLAR_BUF | FSYNC_0);/* 启动自校准 */
+		TM7705_WaitDRDY();	/* 等待内部操作完成 */
+	}
+	else if (_ch == 2)
+	{
+		/* 校准CH2 */
+		TM7705_WriteByte(REG_SETUP | WRITE | CH_2);	/* 写通信寄存器，下一步是写设置寄存器，通道1 */
+		TM7705_WriteByte(MD_CAL_ZERO | __CH2_GAIN_BIPOLAR_BUF | FSYNC_0);	/* 启动自校准 */
+		TM7705_WaitDRDY();	/* 等待内部操作完成 */
+	}
+}
 
+/*
+*********************************************************************************************************
+*	函 数 名: TM7705_SytemCalibFull
+*	功能说明: 启动系统校准满位. 请将AIN+ AIN-接最大输入电压源，执行该函数。校准应该由主程序控制并保存校准参数。
+*			 执行完毕后。可以通过 TM7705_ReadReg(REG_FULL_CH1) 和  TM7705_ReadReg(REG_FULL_CH2) 读取校准参数。
+*	形    参:  _ch : ADC通道，1或2
+*	返 回 值: 无
+*********************************************************************************************************
+*/
+void ICACHE_FLASH_ATTR
+TM7705_SytemCalibFull(uint8_t _ch)
+{
+	if (_ch == 1)
+	{
+		/* 校准CH1 */
+		TM7705_WriteByte(REG_SETUP | WRITE | CH_1);	/* 写通信寄存器，下一步是写设置寄存器，通道1 */
+		TM7705_WriteByte(MD_CAL_FULL | __CH1_GAIN_BIPOLAR_BUF | FSYNC_0);/* 启动自校准 */
+		TM7705_WaitDRDY();	/* 等待内部操作完成 */
+	}
+	else if (_ch == 2)
+	{
+		/* 校准CH2 */
+		TM7705_WriteByte(REG_SETUP | WRITE | CH_2);	/* 写通信寄存器，下一步是写设置寄存器，通道1 */
+		TM7705_WriteByte(MD_CAL_FULL | __CH2_GAIN_BIPOLAR_BUF | FSYNC_0);	/* 启动自校准 */
+		TM7705_WaitDRDY();	/* 等待内部操作完成 */
+	}
 }
 
 
@@ -440,13 +377,11 @@ TM7705_ReadAdc(u8 _ch)
 	/* 为了避免通道切换造成读数失效，读2次 */
 	for (i = 0; i < 2; i++){
 		TM7705_WaitDRDY();		/* 等待DRDY口线为0 */
-
 		if (_ch == 1){
 			TM7705_WriteByte(0x38);
 		}else if (_ch == 2){
 			TM7705_WriteByte(0x39);
 		}
-
 		read = TM7705_Read2Byte();
 	}
 	return read;
@@ -481,7 +416,6 @@ bsp_InitTM7705(void)
 	/* 配置时钟寄存器 */
 	TM7705_WriteByte(REG_CLOCK | WRITE | CH_1);			/* 先写通信寄存器，下一步是写时钟寄存器 */
 
-	// 0x08
 	TM7705_WriteByte(CLKDIS_0 | CLK_4_9152M | FS_50HZ);	/* 刷新速率50Hz */
 	//TM7705_WriteByte(CLKDIS_0 | CLK_4_9152M | FS_500HZ);	/* 刷新速率500Hz */
 
@@ -497,12 +431,12 @@ timer_cb(void *arg)
 
 #if defined(ADC1)
 	adc1 = TM7705_ReadAdc(1);
-	volt1 = ((s32)adc1 * 3300) / 65535;
+	volt1 = ((s32)adc1 * 5000) / 65535;
 #endif
 
 #if defined(ADC2)
 	adc2 = TM7705_ReadAdc(2);
-	volt2 = ((s32)adc2 * 3300) / 65535;
+	volt2 = ((s32)adc2 * 5000) / 65535;
 #endif
 
 	os_printf("CH1=%5ld (%5dmV)\tCH2=%5ld (%5dmV)\r\n",
@@ -533,6 +467,7 @@ user_TM7705_test_init(void)
 	u16 adc = 0;
 
 	wifi_set_opmode(NULL_MODE);
+	system_soft_wdt_stop();
 
 	TM7705_spi_init();
 

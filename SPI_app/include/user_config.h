@@ -32,5 +32,9 @@
 #endif
 
 
+//#define SPI_TEST
+//#define OLED
+#define TM7705
+
 #endif
 

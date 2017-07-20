@@ -28,6 +28,7 @@
 #include "user_interface.h"
 
 #include "driver/uart.h"
+
 #include "spi_test.h"
 #include "TM7705.h"
 #include "oled.h"
@@ -114,9 +115,17 @@ init_done_cb_init(void)
 {
     print_chip_info();
 
-    //spi_interface_test();
-    //user_TM7705_test_init();
+    // define in user_config.h
+#if defined(SPI_TEST)
+    os_printf("SPI TEST\r\n");
+    spi_interface_test();
+#elif defined(OLED)
+    os_printf("OLED TEST\r\n");
     oled_test_init();
+#elif defined(TM7705)
+    os_printf("TM7705 TEST\r\n");
+    user_TM7705_test_init();
+#endif
 }
 
 
