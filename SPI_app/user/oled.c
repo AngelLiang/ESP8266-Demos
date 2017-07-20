@@ -19,14 +19,15 @@
 
 
 /* 引脚连接
- * NodeMCU - ESP8266 - Function - OLED
- * D5 - GPIO14 - HSCLK - CLK
- * D6 - GPIO12 - HMISO - NA
- * D7 - GPIO13 - HMOSI - MOSI
- * D8 - GPIO15 - HCS - CS1
- * D1 - GPIO5 - GPIO - DC
- * D2 - GPIO4 - GPIO - FSO
- * D4 - GPIO2 - GPIO - CS2
+   NodeMCU | ESP8266 | Function | OLED
+   ---|---|---|---
+   D5 | GPIO14 | HSCLK | CLK
+   D6 | GPIO12 | HMISO | NA
+   D7 | GPIO13 | HMOSI | MOSI
+   D8 | GPIO15 - HCS | CS1
+   D1 | GPIO5 - GPIO | DC
+   D2 | GPIO4 - GPIO | FSO
+   D4 | GPIO2 - GPIO | CS2
  */
 
 
