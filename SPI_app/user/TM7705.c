@@ -16,17 +16,25 @@
 
 /* 建议使用SOFT_SPI */
 
-
+// 可能需要修改下面的宏定义
+/***********************************************************/
 #define ADC1
 #define ADC2
 
-#define RESET_PIN	4
-#define DRDY_PIN	5
+#define RESET_PIN				4
+#define PERIPHS_IO_MUX_RESET	PERIPHS_IO_MUX_GPIO4_U
+#define FUNC_RESET				FUNC_GPIO4
+
+#define DRDY_PIN				5
+#define PERIPHS_IO_MUX_DRDY		PERIPHS_IO_MUX_GPIO5_U
+#define FUNC_DRDY				FUNC_GPIO5
+
+/***********************************************************/
 
 #define TM_7705_GPIO_INIT()		do{\
-			PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);\
-			PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);\
-			PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO5_U);\
+			PIN_FUNC_SELECT(PERIPHS_IO_MUX_RESET, FUNC_RESET);\
+			PIN_FUNC_SELECT(PERIPHS_IO_MUX_DRDY, FUNC_DRDY);\
+			PIN_PULLUP_DIS(PERIPHS_IO_MUX_DRDY);\
 			GPIO_DIS_OUTPUT(DRDY_PIN);\
 		}while(0)
 
