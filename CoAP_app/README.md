@@ -1,6 +1,6 @@
 # CoAP_app
 
-在ESP8266上使用CoAP示例工程。
+在ESP8266上运行CoAP Server示例工程。
 
 # 说明
 
