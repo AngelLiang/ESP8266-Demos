@@ -4,7 +4,7 @@
 
 # 说明
 
-移植于移植于https://github.com/1248/microcoap
+代码移植于https://github.com/1248/microcoap
 
 移植代码主要部分在`udp_server.c`文件下的`udp_server_recv`函数。
 
