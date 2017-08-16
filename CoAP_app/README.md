@@ -30,6 +30,8 @@ const coap_endpoint_t endpoints[] =
 1. `coap://<IP>/.well-known/core`：GET
 2. `coap://<IP>/light`：GET、PUT
 
-
+# 效果图
+ 
+![CoAP](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/CoAP.jpg?raw=true)
 
 
