@@ -2,7 +2,7 @@
 
 在ESP8266上使用CoAP示例工程。
 
-# 说明
+# 说明
 
 移植于移植于https://github.com/1248/microcoap
 
