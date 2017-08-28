@@ -5,6 +5,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | 工程名称 | 说明 |
 |---|---|
 | ADC_app| 定时读取ADC数值 |
+| base64_encode_app | base64编码示例 |
 | CoAP_app | 搭建一个简单的CoAP Server |
 | cJSON_app | 使用cJSON示例 |
 | esp-now_app | ESP-NOW使用示例，分为slave和controller两部分 |
