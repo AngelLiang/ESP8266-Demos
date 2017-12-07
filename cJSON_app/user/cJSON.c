@@ -29,29 +29,27 @@
 
 /* 修改cJSON，可以在ESP8266中使用 */
 /* 注意，ESP8266不支持浮点数 */
-#define USE_IN_ESP8266
+#define FOR_ESP8266
 
-#ifndef USE_IN_ESP8266
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <float.h>
-#include <limits.h>
-#include <ctype.h>
-#include <locale.h>
+#ifndef FOR_ESP8266
+	#include <string.h>
+	#include <stdio.h>
+	#include <math.h>
+	#include <stdlib.h>
+	#include <float.h>
+	#include <limits.h>
+	#include <ctype.h>
+	#include <locale.h>
 #else
+	#include <string.h>
+	#include <limits.h>
+	#include <ctype.h>
 
-#include <string.h>
-#include <limits.h>
-#include <ctype.h>
-
-#include "c_types.h"
-#include "osapi.h"
-#include "mem.h"
-#include "ets_sys.h"
-#include "osapi.h"
-
+	#include "c_types.h"
+	#include "osapi.h"
+	#include "mem.h"
+	#include "ets_sys.h"
+	#include "osapi.h"
 #endif
 
 #ifdef __GNUC__
@@ -61,9 +59,9 @@
 #include "cJSON.h"
 
 /* define our own boolean type */
-#ifndef USE_IN_ESP8266
-#define true ((cJSON_bool)1)
-#define false ((cJSON_bool)0)
+#ifndef FOR_ESP8266
+	#define true ((cJSON_bool)1)
+	#define false ((cJSON_bool)0)
 #endif
 
 typedef struct {
@@ -71,6 +69,7 @@ typedef struct {
     size_t position;
 } error;
 static error global_error = { NULL, 0 };
+
 
 CJSON_PUBLIC(const char *) ICACHE_FLASH_ATTR
 cJSON_GetErrorPtr(void)
@@ -83,6 +82,10 @@ cJSON_GetErrorPtr(void)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
+/*
+ * function: cJSON_Version
+ * description: 返回cJSON版本信息
+ */
 CJSON_PUBLIC(const char*) ICACHE_FLASH_ATTR
 cJSON_Version(void)
 {
@@ -124,33 +127,37 @@ typedef struct internal_hooks
     void *(*reallocate)(void *pointer, size_t size);
 } internal_hooks;
 
-#ifdef USE_IN_ESP8266
+/* 把ESP8266有关内存的操作变为函数 */
+#ifdef FOR_ESP8266
 void* ICACHE_FLASH_ATTR
-user_malloc(size_t size)
+esp_malloc(size_t size)
 {
 	return (void*)os_malloc(size);
 }
 
 void ICACHE_FLASH_ATTR
-user_free(void *pointer)
+esp_free(void *pointer)
 {
 	os_free(pointer);
 }
 
 void* ICACHE_FLASH_ATTR
-user_realloc(void *pointer, size_t size)
+esp_realloc(void *pointer, size_t size)
 {
 	return (void*)os_realloc(pointer, size);
 }
-#endif
 
-#ifndef USE_IN_ESP8266
+static internal_hooks global_hooks = { esp_malloc,  esp_free,  esp_realloc };
+
+#else
 static internal_hooks global_hooks = { malloc, free, realloc };
 static internal_hooks global_hooks = { os_malloc,  os_free,  os_realloc };
-#else
-static internal_hooks global_hooks = { user_malloc,  user_free,  user_realloc };
 #endif
 
+
+/*
+ * function: cJSON_strdup
+ */
 static unsigned char* ICACHE_FLASH_ATTR
 cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
 {
@@ -172,26 +179,28 @@ cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
     return copy;
 }
 
-
+/*
+ * function: cJSON_InitHooks
+ */
 CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
 cJSON_InitHooks(cJSON_Hooks* hooks)
 {
     if (hooks == NULL)
     {
         /* Reset hooks */
-        global_hooks.allocate = user_malloc;
-        global_hooks.deallocate = user_free;
-        global_hooks.reallocate = user_realloc;
+        global_hooks.allocate = esp_malloc;
+        global_hooks.deallocate = esp_free;
+        global_hooks.reallocate = esp_realloc;
         return;
     }
 
-    global_hooks.allocate = user_malloc;
+    global_hooks.allocate = esp_malloc;
     if (hooks->malloc_fn != NULL)
     {
         global_hooks.allocate = hooks->malloc_fn;
     }
 
-    global_hooks.deallocate = user_free;
+    global_hooks.deallocate = esp_free;
     if (hooks->free_fn != NULL)
     {
         global_hooks.deallocate = hooks->free_fn;
@@ -199,13 +208,16 @@ cJSON_InitHooks(cJSON_Hooks* hooks)
 
     /* use realloc only if both free and malloc are used */
     global_hooks.reallocate = NULL;
-    if ((global_hooks.allocate == user_malloc) && (global_hooks.deallocate == user_free))
+    if ((global_hooks.allocate == esp_malloc) && (global_hooks.deallocate == esp_free))
     {
-        global_hooks.reallocate = user_realloc;
+        global_hooks.reallocate = esp_realloc;
     }
 }
 
 /* Internal constructor. */
+/*
+ * function: cJSON_New_Item
+ */
 static cJSON * ICACHE_FLASH_ATTR
 cJSON_New_Item(const internal_hooks * const hooks)
 {
@@ -219,6 +231,9 @@ cJSON_New_Item(const internal_hooks * const hooks)
 }
 
 /* Delete a cJSON structure. */
+/*
+ * function: cJSON_Delete
+ */
 CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
 cJSON_Delete(cJSON *item)
 {
@@ -247,7 +262,7 @@ cJSON_Delete(cJSON *item)
 static unsigned char ICACHE_FLASH_ATTR
 get_decimal_point(void)
 {
-#ifndef USE_IN_ESP8266
+#ifndef FOR_ESP8266
     struct lconv *lconv = localeconv();
     return (unsigned char) lconv->decimal_point[0];
 #else
@@ -274,7 +289,7 @@ typedef struct
 #define buffer_at_offset(buffer) ((buffer)->content + (buffer)->offset)
 
 
-#ifndef USE_IN_ESP8266
+#ifndef FOR_ESP8266
 /* Parse the input text to generate a number, and populate the result into item. */
 static cJSON_bool ICACHE_FLASH_ATTR
 parse_number(cJSON * const item, parse_buffer * const input_buffer)
@@ -358,6 +373,9 @@ loop_end:
 
 #else
 
+/*
+ * function: parse_number
+ */
 static cJSON_bool ICACHE_FLASH_ATTR
 parse_number(cJSON * const item, parse_buffer * const input_buffer)
 {
@@ -429,7 +447,7 @@ loop_end:
 #endif
 
 
-#ifndef USE_IN_ESP8266
+#ifndef FOR_ESP8266
 /* don't ask me, but the original cJSON_SetNumberValue returns an integer or double */
 CJSON_PUBLIC(double) ICACHE_FLASH_ATTR
 cJSON_SetNumberHelper(cJSON *object, double number)
@@ -452,6 +470,10 @@ cJSON_SetNumberHelper(cJSON *object, double number)
 
 #else
 
+/*
+ * function: cJSON_SetNumberHelper
+ * description: 设置Number辅助函数
+ */
 CJSON_PUBLIC(int) ICACHE_FLASH_ATTR
 cJSON_SetNumberHelper(cJSON *object, int number)
 {
@@ -574,7 +596,7 @@ update_offset(printbuffer * const buffer)
     buffer->offset += os_strlen((const char*)buffer_pointer);
 }
 
-#ifndef USE_IN_ESP8266
+#ifndef FOR_ESP8266
 /* Render the number nicely from the given item into a string. */
 static cJSON_bool ICACHE_FLASH_ATTR
 print_number(const cJSON * const item, printbuffer * const output_buffer)
@@ -654,18 +676,14 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
     unsigned char number_buffer[26]; /* temporary buffer to print the number into */
     unsigned char decimal_point = get_decimal_point();
 
-    if (output_buffer == NULL)
-    {
+    if (output_buffer == NULL){
         return false;
     }
 
     /* This checks for NaN and Infinity */
-    if ((d * 0) != 0)
-    {
+    if ((d * 0) != 0){
         length = os_sprintf((char*)number_buffer, "null");
-    }
-    else
-    {
+    }else{
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
         //length = os_sprintf((char*)number_buffer, "%1.15g", d);
     	length = os_sprintf((char*)number_buffer, "%d", d);
@@ -679,20 +697,17 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
 
     /* reserve appropriate space in the output */
     output_pointer = ensure(output_buffer, (size_t)length);
-    if (output_pointer == NULL)
-    {
+    if (output_pointer == NULL){
         return false;
     }
 
     /* copy the printed number to the output and replace locale
      * dependent decimal point with '.' */
-    for (i = 0; i < ((size_t)length); i++)
-    {
+    for (i = 0; i < ((size_t)length); i++){
         output_pointer[i] = number_buffer[i];
     }
 
     output_pointer[i] = '\0';
-
     output_buffer->offset += (size_t)length;
 
     return true;
@@ -1114,6 +1129,9 @@ print_string_ptr(const unsigned char * const input, printbuffer * const output_b
 }
 
 /* Invoke print_string_ptr (which is useful) on an item. */
+/*
+ * function: print_string
+ */
 static cJSON_bool ICACHE_FLASH_ATTR
 print_string(const cJSON * const item, printbuffer * const p)
 {
@@ -2394,12 +2412,14 @@ cJSON_CreateArray(void)
     return item;
 }
 
+/*
+ * function: cJSON_CreateObject
+ */
 CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
 cJSON_CreateObject(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
-    if (item)
-    {
+    if (item){
         item->type = cJSON_Object;
     }
 
@@ -2700,6 +2720,8 @@ cJSON_Minify(char *json)
     *into = '\0';
 }
 
+/******************************************************************/
+
 CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
 cJSON_IsInvalid(const cJSON * const item)
 {
@@ -2780,8 +2802,7 @@ cJSON_IsString(const cJSON * const item)
 CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
 cJSON_IsArray(const cJSON * const item)
 {
-    if (item == NULL)
-    {
+    if (item == NULL){
         return false;
     }
 
@@ -2791,8 +2812,7 @@ cJSON_IsArray(const cJSON * const item)
 CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
 cJSON_IsObject(const cJSON * const item)
 {
-    if (item == NULL)
-    {
+    if (item == NULL){
         return false;
     }
 
@@ -2802,13 +2822,14 @@ cJSON_IsObject(const cJSON * const item)
 CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
 cJSON_IsRaw(const cJSON * const item)
 {
-    if (item == NULL)
-    {
+    if (item == NULL){
         return false;
     }
 
     return (item->type & 0xFF) == cJSON_Raw;
 }
+
+/******************************************************************/
 
 CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
 cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
@@ -2819,8 +2840,7 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
     }
 
     /* check if type is valid */
-    switch (a->type & 0xFF)
-    {
+    switch (a->type & 0xFF){
         case cJSON_False:
         case cJSON_True:
         case cJSON_NULL:
@@ -2836,13 +2856,11 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
     }
 
     /* identical objects are equal */
-    if (a == b)
-    {
+    if (a == b){
         return true;
     }
 
-    switch (a->type & 0xFF)
-    {
+    switch (a->type & 0xFF){
         /* in these cases and equal type is enough */
         case cJSON_False:
         case cJSON_True:
@@ -2850,34 +2868,28 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
             return true;
 
         case cJSON_Number:
-            if (a->valuedouble == b->valuedouble)
-            {
+            if (a->valuedouble == b->valuedouble){
                 return true;
             }
             return false;
 
         case cJSON_String:
         case cJSON_Raw:
-            if ((a->valuestring == NULL) || (b->valuestring == NULL))
-            {
+            if ((a->valuestring == NULL) || (b->valuestring == NULL)){
                 return false;
             }
-            if (os_strcmp(a->valuestring, b->valuestring) == 0)
-            {
+            if (os_strcmp(a->valuestring, b->valuestring) == 0){
                 return true;
             }
 
             return false;
 
-        case cJSON_Array:
-        {
+        case cJSON_Array:{
             cJSON *a_element = a->child;
             cJSON *b_element = b->child;
 
-            for (; (a_element != NULL) && (b_element != NULL);)
-            {
-                if (!cJSON_Compare(a_element, b_element, case_sensitive))
-                {
+            for (; (a_element != NULL) && (b_element != NULL);){
+                if (!cJSON_Compare(a_element, b_element, case_sensitive)){
                     return false;
                 }
 
@@ -2888,20 +2900,16 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
             return true;
         }
 
-        case cJSON_Object:
-        {
+        case cJSON_Object:{
             cJSON *a_element = NULL;
-            cJSON_ArrayForEach(a_element, a)
-            {
+            cJSON_ArrayForEach(a_element, a){
                 /* TODO This has O(n^2) runtime, which is horrible! */
                 cJSON *b_element = get_object_item(b, a_element->string, case_sensitive);
-                if (b_element == NULL)
-                {
+                if (b_element == NULL){
                     return false;
                 }
 
-                if (!cJSON_Compare(a_element, b_element, case_sensitive))
-                {
+                if (!cJSON_Compare(a_element, b_element, case_sensitive)){
                     return false;
                 }
             }
