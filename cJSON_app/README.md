@@ -6,7 +6,7 @@
 
 效果图
 
-![ESP826-cJSON-demo](https://github.com/AngelLiang/ESP8266-Demos/blob/master/img/cJSON.jpg)
+![ESP826-cJSON-demo](screenshot/cJSON.jpg)
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/52713746
 
