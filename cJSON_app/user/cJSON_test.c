@@ -21,9 +21,6 @@
 */
 
 
-//#include <stdio.h>
-//#include <stdlib.h>
-#include <string.h>
 #include "cJSON.h"
 
 #include "c_types.h"
@@ -36,8 +33,8 @@
 struct record
 {
     const char *precision;
-    //double lat;
-    //double lon;
+    double lat;
+    double lon;
     const char *address;
     const char *city;
     const char *state;
@@ -151,8 +148,8 @@ void create_objects(void)
     {
         {
             "zip",
-            //37.7668,
-            //-1.223959e+2,
+            37.7668,
+            -1.223959e+2,
             "",
             "SAN FRANCISCO",
             "CA",
@@ -161,8 +158,8 @@ void create_objects(void)
         },
         {
             "zip",
-            //37.371991,
-            //-1.22026e+2,
+            37.371991,
+            -1.22026e+2,
             "",
             "SUNNYVALE",
             "CA",
@@ -171,7 +168,7 @@ void create_objects(void)
         }
     };
 
-    //volatile double zero = 0.0;
+    volatile double zero = 0.0;
 
     /* Here we construct some JSON standards, from the JSON site. */
 
@@ -240,8 +237,8 @@ void create_objects(void)
     {
         cJSON_AddItemToArray(root, fld = cJSON_CreateObject());
         cJSON_AddStringToObject(fld, "precision", fields[i].precision);
-        //cJSON_AddNumberToObject(fld, "Latitude", fields[i].lat);
-        //cJSON_AddNumberToObject(fld, "Longitude", fields[i].lon);
+        cJSON_AddNumberToObject(fld, "Latitude", fields[i].lat);
+        cJSON_AddNumberToObject(fld, "Longitude", fields[i].lon);
         cJSON_AddStringToObject(fld, "Address", fields[i].address);
         cJSON_AddStringToObject(fld, "City", fields[i].city);
         cJSON_AddStringToObject(fld, "State", fields[i].state);
@@ -257,7 +254,6 @@ void create_objects(void)
     }
     cJSON_Delete(root);
 
-#if 0
     root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "number", 1.0 / zero);
 
@@ -266,30 +262,56 @@ void create_objects(void)
         //exit(EXIT_FAILURE);
     }
     cJSON_Delete(root);
-#endif
 }
 
 int ICACHE_FLASH_ATTR
 cJSON_test(void)
 {
-	os_printf("\r\n===================\r\n");
+	os_printf("\r\n=====================\r\n");
     /* print the version */
     os_printf("cJSON Version: %s", cJSON_Version());
-    os_printf("\r\n===================\r\n");
+    os_printf("\r\n=====================\r\n");
 
     /* Now some samplecode for building objects concisely: */
     create_objects();
 
-    u8* data = "{\"hello\":\"world\",\"number\":12345}";
+    os_printf("\r\nparse string!\r\n");
+    u8* data = "{\"string\":\"hello world\"}";
     cJSON * root = cJSON_Parse(data);
-    if(NULL==root){
+    if(NULL!=root){
+    	if(cJSON_HasObjectItem(root, "string")){		// 是否有对应的item
+			cJSON *string = cJSON_GetObjectItem(root, "string");	// 获取item
+			if (cJSON_IsString(string)){			// 判断item的value是否是string类型
+				char *s = cJSON_Print(string);		// 渲染item的value为字符串
+				os_printf("string: %s\r\n", s);
+				cJSON_free((void *)s);				// 记得要释放
+			}
+    	}
+		cJSON_Delete(root);
+    }else{
     	os_printf("\r\nparse error!\r\n");
     }
-    cJSON *hello = cJSON_GetObjectItemCaseSensitive(root, "hello");
-    cJSON *number = cJSON_GetObjectItemCaseSensitive(root, "number");
-    if (cJSON_IsNumber(number)){
-      os_printf("number: %d\r\n", number->valueint);
+
+
+    os_printf("\r\nparse number!\r\n");
+    u8* num = "{\"number\":12345}";
+    cJSON * root2 = cJSON_Parse(num);
+    if(NULL!=root){
+    	if(cJSON_HasObjectItem(root, "number")){
+			cJSON *number = cJSON_GetObjectItem(root, "number");
+			if (cJSON_IsNumber(number)){
+				char *n = cJSON_Print(number);
+				os_printf("number: %s\r\n", n);
+				cJSON_free((void *)n);
+			}
+    	}
+    	cJSON_Delete(root);
+
+    }else{
+    	os_printf("\r\nparse error!\r\n");
     }
+
+    os_printf("\r\n");
 
     return 0;
 }

@@ -23,19 +23,26 @@
 #ifndef cJSON__h
 #define cJSON__h
 
-/* 修改cJSON，可以在ESP8266中使用 */
-/* 注意，ESP8266不支持浮点数 */
-#define USE_IN_ESP8266
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#define CJSON_FOR_ESP8266
+
+
+#ifdef CJSON_FOR_ESP8266
+	#include "osapi.h"
+	#include "mem.h"
+	#include "ets_sys.h"
+	#include "osapi.h"
+	#include "c_types.h"
+#endif
+
 /* project version */
 #define CJSON_VERSION_MAJOR 1
-#define CJSON_VERSION_MINOR 5
-#define CJSON_VERSION_PATCH 3
+#define CJSON_VERSION_MINOR 6
+#define CJSON_VERSION_PATCH 0
 
 #include <stddef.h>
 
@@ -54,6 +61,7 @@ extern "C"
 #define cJSON_StringIsConst 512
 
 /* The cJSON structure: */
+/* 一个cJSON结构体至少占用 4+4+4+4+4+4+8+4 = 36 Byte */
 typedef struct cJSON
 {
     /* next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem */
@@ -85,8 +93,9 @@ typedef struct cJSON_Hooks
 typedef int cJSON_bool;
 
 #if !defined(__WINDOWS__) && (defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32))
-#define __WINDOWS__
+    #define __WINDOWS__
 #endif
+
 #ifdef __WINDOWS__
 
 /* When compiling for windows, we specify a specific calling convention to avoid issues where we are being called from a project with a different default calling convention.  For windows you have 2 define options:
@@ -109,28 +118,31 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 
 /* export symbols by default, this is necessary for copy pasting the C and header file */
 #if !defined(CJSON_HIDE_SYMBOLS) && !defined(CJSON_IMPORT_SYMBOLS) && !defined(CJSON_EXPORT_SYMBOLS)
-#define CJSON_EXPORT_SYMBOLS
+    #define CJSON_EXPORT_SYMBOLS
 #endif
 
 #if defined(CJSON_HIDE_SYMBOLS)
-#define CJSON_PUBLIC(type)   type __stdcall
+    #define CJSON_PUBLIC(type)   type __stdcall
 #elif defined(CJSON_EXPORT_SYMBOLS)
-#define CJSON_PUBLIC(type)   __declspec(dllexport) type __stdcall
+    #define CJSON_PUBLIC(type)   __declspec(dllexport) type __stdcall
 #elif defined(CJSON_IMPORT_SYMBOLS)
-#define CJSON_PUBLIC(type)   __declspec(dllimport) type __stdcall
+    #define CJSON_PUBLIC(type)   __declspec(dllimport) type __stdcall
 #endif
-#else /* !WIN32 */
-#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(CJSON_API_VISIBILITY)
-#define CJSON_PUBLIC(type)   __attribute__((visibility("default"))) type
-#else
-#define CJSON_PUBLIC(type) type
-#endif
+
+#else /* !WIN32 */  // 如果不是WIN32
+    #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(CJSON_API_VISIBILITY)
+        #define CJSON_PUBLIC(type)   __attribute__((visibility("default"))) type
+	#elif defined(CJSON_FOR_ESP8266)		// 添加 ICACHE_FLASH_ATTR
+		#define CJSON_PUBLIC(type) ICACHE_FLASH_ATTR type
+    #else
+        #define CJSON_PUBLIC(type) type
+    #endif
 #endif
 
 /* Limits how deeply nested arrays/objects can be before cJSON rejects to parse them.
  * This is to prevent stack overflows. */
 #ifndef CJSON_NESTING_LIMIT
-#define CJSON_NESTING_LIMIT 1000
+    #define CJSON_NESTING_LIMIT 1000
 #endif
 
 /* returns the version of cJSON as a string */
@@ -142,6 +154,10 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks);
 /* Memory Management: the caller is always responsible to free the results from all variants of cJSON_Parse (with cJSON_Delete) and cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The exception is cJSON_PrintPreallocated, where the caller has full responsibility of the buffer. */
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */
 CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value);
+/* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte parsed. */
+/* If you supply a ptr in return_parse_end and parsing fails, then return_parse_end will contain a pointer to the error so will match cJSON_GetErrorPtr(). */
+CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated);
+
 /* Render a cJSON entity to text for transfer/storage. */
 CJSON_PUBLIC(char *) cJSON_Print(const cJSON *item);
 /* Render a cJSON entity to text for transfer/storage without any formatting. */
@@ -232,10 +248,6 @@ The item->next and ->prev pointers are always zero on return from Duplicate. */
 CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive);
 
 
-/* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte parsed. */
-/* If you supply a ptr in return_parse_end and parsing fails, then return_parse_end will contain a pointer to the error. If not, then cJSON_GetErrorPtr() does the job. */
-CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated);
-
 CJSON_PUBLIC(void) cJSON_Minify(char *json);
 
 /* Macros for creating things quickly. */
@@ -249,14 +261,8 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json);
 
 /* When assigning an integer value, it needs to be propagated to valuedouble too. */
 #define cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
-
-#ifndef USE_IN_ESP8266
 /* helper for the cJSON_SetNumberValue macro */
 CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
-#else
-CJSON_PUBLIC(int) cJSON_SetNumberHelper(cJSON *object, int number);
-#endif
-
 #define cJSON_SetNumberValue(object, number) ((object != NULL) ? cJSON_SetNumberHelper(object, (double)number) : (number))
 
 /* Macro for iterating over an array or object */

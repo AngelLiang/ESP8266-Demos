@@ -1,4 +1,10 @@
 /*
+ * Fork form https://github.com/DaveGamble/cJSON
+ * 用于学习cJSON
+ * cJSON版本： v1.6.0
+ */
+
+/*
   Copyright (c) 2009-2017 Dave Gamble and cJSON contributors
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,71 +29,90 @@
 /* cJSON */
 /* JSON parser in C. */
 
+/* disable warnings about old C89 functions in MSVC */
+#if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+
 #ifdef __GNUC__
 #pragma GCC visibility push(default)
 #endif
-
-/* 修改cJSON，可以在ESP8266中使用 */
-/* 注意，ESP8266不支持浮点数 */
-#define FOR_ESP8266
-
-#ifndef FOR_ESP8266
-	#include <string.h>
-	#include <stdio.h>
-	#include <math.h>
-	#include <stdlib.h>
-	#include <float.h>
-	#include <limits.h>
-	#include <ctype.h>
-	#include <locale.h>
-#else
-	#include <string.h>
-	#include <limits.h>
-	#include <ctype.h>
-
-	#include "c_types.h"
-	#include "osapi.h"
-	#include "mem.h"
-	#include "ets_sys.h"
-	#include "osapi.h"
+#if defined(_MSC_VER)
+#pragma warning (push)
+/* disable warning about single line comments in system headers */
+#pragma warning (disable : 4001)
 #endif
 
+/************************************************************************************/
+//
+
+#include "cJSON.h"
+
+#include <string.h>
+#include <math.h>
+#include <limits.h>
+
+#ifndef CJSON_FOR_ESP8266
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <float.h>
+#endif
+
+
+#ifdef ENABLE_LOCALES
+#include <locale.h>
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning (pop)
+#endif
 #ifdef __GNUC__
 #pragma GCC visibility pop
 #endif
 
-#include "cJSON.h"
+
 
 /* define our own boolean type */
-#ifndef FOR_ESP8266
-	#define true ((cJSON_bool)1)
-	#define false ((cJSON_bool)0)
+#ifndef true
+#define true ((cJSON_bool)1)
+#endif
+#ifndef false
+#define false ((cJSON_bool)0)
 #endif
 
+/************************************************************************************/
+// 有关错误信息的代码
+
+/* 错误信息结构体 */
 typedef struct {
     const unsigned char *json;
     size_t position;
 } error;
 static error global_error = { NULL, 0 };
 
-
-CJSON_PUBLIC(const char *) ICACHE_FLASH_ATTR
-cJSON_GetErrorPtr(void)
+/*
+ * function: cJSON_GetErrorPtr
+ * description: 获取错误信息
+ */
+CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
 {
     return (const char*) (global_error.json + global_error.position);
 }
 
+/************************************************************************************/
+// 有关版本的代码
+
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
-#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 5) || (CJSON_VERSION_PATCH != 3)
+#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 6) || (CJSON_VERSION_PATCH != 0)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
 /*
  * function: cJSON_Version
- * description: 返回cJSON版本信息
+ * description: get version of cJSON
  */
-CJSON_PUBLIC(const char*) ICACHE_FLASH_ATTR
-cJSON_Version(void)
+CJSON_PUBLIC(const char*) cJSON_Version(void)
 {
     static char version[15];
     os_sprintf(version, "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
@@ -95,9 +120,14 @@ cJSON_Version(void)
     return version;
 }
 
-/* Case insensitive string comparison, doesn't consider two NULL pointers equal though */
-static int ICACHE_FLASH_ATTR
-case_insensitive_strcmp(const unsigned char *string1, const unsigned char *string2)
+/************************************************************************************/
+
+/*
+ * function: case_insensitive_strcmp
+ * description: Case insensitive string comparison, doesn't consider two NULL pointers equal though
+ *              不区分大小写比较
+ */
+ICACHE_FLASH_ATTR static int case_insensitive_strcmp(const unsigned char *string1, const unsigned char *string2)
 {
     if ((string1 == NULL) || (string2 == NULL))
     {
@@ -120,6 +150,10 @@ case_insensitive_strcmp(const unsigned char *string1, const unsigned char *strin
     return tolower(*string1) - tolower(*string2);
 }
 
+/************************************************************************************/
+// 有关内存分配和释放的代码
+
+// 内存分配和释放的钩子
 typedef struct internal_hooks
 {
     void *(*allocate)(size_t size);
@@ -127,53 +161,71 @@ typedef struct internal_hooks
     void *(*reallocate)(void *pointer, size_t size);
 } internal_hooks;
 
-/* 把ESP8266有关内存的操作变为函数 */
-#ifdef FOR_ESP8266
-void* ICACHE_FLASH_ATTR
-esp_malloc(size_t size)
-{
-	return (void*)os_malloc(size);
-}
 
-void ICACHE_FLASH_ATTR
-esp_free(void *pointer)
-{
-	os_free(pointer);
-}
 
-void* ICACHE_FLASH_ATTR
-esp_realloc(void *pointer, size_t size)
-{
-	return (void*)os_realloc(pointer, size);
-}
+// 定义cJSON中内存分配采用的方式
+// 移植的时候可能需要修改
 
-static internal_hooks global_hooks = { esp_malloc,  esp_free,  esp_realloc };
-
+#if defined(_MSC_VER)
+	/* work around MSVC error C2322: '...' address of dillimport '...' is not static */
+	static void *internal_malloc(size_t size)
+	{
+		return malloc(size);
+	}
+	static void internal_free(void *pointer)
+	{
+		free(pointer);
+	}
+	static void *internal_realloc(void *pointer, size_t size)
+	{
+		return realloc(pointer, size);
+	}
+#elif defined(CJSON_FOR_ESP8266)
+	ICACHE_FLASH_ATTR static void *internal_malloc(size_t size)
+	{
+		return (void *)os_malloc(size);
+	}
+	ICACHE_FLASH_ATTR static void internal_free(void *pointer)
+	{
+		os_free(pointer);
+	}
+	ICACHE_FLASH_ATTR static void *internal_realloc(void *pointer, size_t size)
+	{
+		return (void *)os_realloc(pointer, size);
+	}
 #else
-static internal_hooks global_hooks = { malloc, free, realloc };
-static internal_hooks global_hooks = { os_malloc,  os_free,  os_realloc };
+	#define internal_malloc malloc
+	#define internal_free free
+	#define internal_realloc realloc
 #endif
 
+static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
+
+/************************************************************************************/
 
 /*
  * function: cJSON_strdup
+ * description: 字符串拷贝函数，在create函数里回用到
  */
-static unsigned char* ICACHE_FLASH_ATTR
-cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
+ICACHE_FLASH_ATTR static unsigned char* cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
 {
     size_t length = 0;
     unsigned char *copy = NULL;
 
+	// 检查参数
     if (string == NULL)
     {
         return NULL;
     }
 
     length = os_strlen((const char*)string) + sizeof("");
-    if (!(copy = (unsigned char*)hooks->allocate(length)))
+    copy = (unsigned char*)hooks->allocate(length);		// 申请内存
+    if (copy == NULL)
     {
         return NULL;
     }
+
+	// 拷贝
     os_memcpy(copy, string, length);
 
     return copy;
@@ -181,26 +233,27 @@ cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
 
 /*
  * function: cJSON_InitHooks
+ * description: 初始化钩子函数
  */
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_InitHooks(cJSON_Hooks* hooks)
+CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
 {
+#ifndef CJSON_FOR_ESP8266
     if (hooks == NULL)
     {
         /* Reset hooks */
-        global_hooks.allocate = esp_malloc;
-        global_hooks.deallocate = esp_free;
-        global_hooks.reallocate = esp_realloc;
+        global_hooks.allocate = malloc;
+        global_hooks.deallocate = free;
+        global_hooks.reallocate = realloc;
         return;
     }
 
-    global_hooks.allocate = esp_malloc;
+    global_hooks.allocate = malloc;
     if (hooks->malloc_fn != NULL)
     {
         global_hooks.allocate = hooks->malloc_fn;
     }
 
-    global_hooks.deallocate = esp_free;
+    global_hooks.deallocate = free;
     if (hooks->free_fn != NULL)
     {
         global_hooks.deallocate = hooks->free_fn;
@@ -208,34 +261,47 @@ cJSON_InitHooks(cJSON_Hooks* hooks)
 
     /* use realloc only if both free and malloc are used */
     global_hooks.reallocate = NULL;
-    if ((global_hooks.allocate == esp_malloc) && (global_hooks.deallocate == esp_free))
+    if ((global_hooks.allocate == malloc) && (global_hooks.deallocate == free))
     {
-        global_hooks.reallocate = esp_realloc;
+        global_hooks.reallocate = realloc;
     }
+#else
+    if (hooks->malloc_fn != NULL)
+    {
+        global_hooks.allocate = hooks->malloc_fn;
+    }
+    if (hooks->free_fn != NULL)
+    {
+        global_hooks.deallocate = hooks->free_fn;
+    }
+#endif
 }
 
-/* Internal constructor. */
+/************************************************************************************/
+
 /*
  * function: cJSON_New_Item
+ * description: 构造一个item，item可以理解为一个节点
  */
-static cJSON * ICACHE_FLASH_ATTR
-cJSON_New_Item(const internal_hooks * const hooks)
+/* Internal constructor. */
+ICACHE_FLASH_ATTR static cJSON *cJSON_New_Item(const internal_hooks * const hooks)
 {
     cJSON* node = (cJSON*)hooks->allocate(sizeof(cJSON));
     if (node)
     {
-        os_memset(node, '\0', sizeof(cJSON));
+        os_memset(node, '\0', sizeof(cJSON));	// 初始化为0
     }
 
     return node;
 }
 
-/* Delete a cJSON structure. */
 /*
  * function: cJSON_Delete
+ * description: 删除item，采用递归的方式释放item->child，循环方式释放item->next
+ *              当root节点不使用后必须调用这个函数
  */
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_Delete(cJSON *item)
+/* Delete a cJSON structure. */
+CJSON_PUBLIC(void) cJSON_Delete(cJSON *item)
 {
     cJSON *next = NULL;
     while (item != NULL)
@@ -243,7 +309,7 @@ cJSON_Delete(cJSON *item)
         next = item->next;
         if (!(item->type & cJSON_IsReference) && (item->child != NULL))
         {
-            cJSON_Delete(item->child);
+            cJSON_Delete(item->child);  // 开始递归
         }
         if (!(item->type & cJSON_IsReference) && (item->valuestring != NULL))
         {
@@ -254,53 +320,65 @@ cJSON_Delete(cJSON *item)
             global_hooks.deallocate(item->string);
         }
         global_hooks.deallocate(item);
-        item = next;
+        item = next;	// 获取下一个节点
     }
 }
 
-/* get the decimal point character of the current locale */
-static unsigned char ICACHE_FLASH_ATTR
-get_decimal_point(void)
+/************************************************************************************/
+
+/*
+ * function: get_decimal_point
+ * description: get the decimal point character of the current locale
+ */
+ICACHE_FLASH_ATTR static unsigned char get_decimal_point(void)
 {
-#ifndef FOR_ESP8266
+#ifdef ENABLE_LOCALES
     struct lconv *lconv = localeconv();
     return (unsigned char) lconv->decimal_point[0];
 #else
-    return 0;
+    return '.';
 #endif
 }
 
+/************************************************************************************/
+
+/* 解析缓冲区的结构体 */
 typedef struct
 {
     const unsigned char *content;
     size_t length;
     size_t offset;
     size_t depth; /* How deeply nested (in arrays/objects) is the input at the current offset. */
-    internal_hooks hooks;
+    internal_hooks hooks;	// 钩子
 } parse_buffer;
 
 /* check if the given size is left to read in a given parse buffer (starting with 1) */
 #define can_read(buffer, size) ((buffer != NULL) && (((buffer)->offset + size) <= (buffer)->length))
-#define cannot_read(buffer, size) (!can_read(buffer, size))
+
 /* check if the buffer can be accessed at the given index (starting with 0) */
 #define can_access_at_index(buffer, index) ((buffer != NULL) && (((buffer)->offset + index) < (buffer)->length))
 #define cannot_access_at_index(buffer, index) (!can_access_at_index(buffer, index))
+
 /* get a pointer to the buffer at the position */
 #define buffer_at_offset(buffer) ((buffer)->content + (buffer)->offset)
 
-
-#ifndef FOR_ESP8266
-/* Parse the input text to generate a number, and populate the result into item. */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_number(cJSON * const item, parse_buffer * const input_buffer)
+/*
+ * function: parse_number
+ * parameter: cJSON * const item - 输出的item
+ *            parse_buffer * const input_buffer - 输入缓存区
+ * return: cJSON_bool
+ * description: Parse the input text to generate a number, and populate the result into item.
+ *              解析输入的文本，生成一个数字，并把结果移到item
+ */
+ICACHE_FLASH_ATTR static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_buffer)
 {
-
     double number = 0;
     unsigned char *after_end = NULL;
     unsigned char number_c_string[64];
-    unsigned char decimal_point = get_decimal_point();
+    unsigned char decimal_point = get_decimal_point();	// decimal_point 初始化
     size_t i = 0;
 
+	// 检查输入的参数
     if ((input_buffer == NULL) || (input_buffer->content == NULL))
     {
         return false;
@@ -329,7 +407,7 @@ parse_number(cJSON * const item, parse_buffer * const input_buffer)
             case 'E':
                 number_c_string[i] = buffer_at_offset(input_buffer)[i];
                 break;
-
+			// 有小数点
             case '.':
                 number_c_string[i] = decimal_point;
                 break;
@@ -340,88 +418,31 @@ parse_number(cJSON * const item, parse_buffer * const input_buffer)
     }
 
 loop_end:
-    number_c_string[i] = '\0';
+    number_c_string[i] = '\0';	// 设置字符串末尾
 
+#ifndef CJSON_FOR_ESP8266
+	/*
+	 * strtod：将字符串转换成浮点数，表头文件是#include <stdlib.h>
+	 */
     number = strtod((const char*)number_c_string, (char**)&after_end);
     if (number_c_string == after_end)
     {
         return false; /* parse_error */
     }
-
-    item->valuedouble = number;
-
-    /* use saturation in case of overflow */
-    if (number >= INT_MAX)
-    {
-        item->valueint = INT_MAX;
-    }
-    else if (number <= INT_MIN)
-    {
-        item->valueint = INT_MIN;
-    }
-    else
-    {
-        item->valueint = (int)number;
-    }
-
-    item->type = cJSON_Number;
-
-    input_buffer->offset += (size_t)(after_end - number_c_string);
-
-    return true;
-}
-
 #else
-
-/*
- * function: parse_number
- */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_number(cJSON * const item, parse_buffer * const input_buffer)
-{
-    int number = 0;
-    unsigned char *after_end = NULL;
-    unsigned char number_c_string[64];
-    size_t i = 0;
-
-    if ((input_buffer == NULL) || (input_buffer->content == NULL))
-    {
-        return false;
-    }
-
-    /* copy the number into a temporary buffer and replace '.' with the decimal point
-     * of the current locale (for strtod)
-     * This also takes care of '\0' not necessarily being available for marking the end of the input */
-    for (i = 0; (i < (sizeof(number_c_string) - 1)) && can_access_at_index(input_buffer, i); i++)
-    {
-        switch (buffer_at_offset(input_buffer)[i])
-        {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                number_c_string[i] = buffer_at_offset(input_buffer)[i];
-                break;
-            default:
-                goto loop_end;
-        }
-    }
-
-loop_end:
-    number_c_string[i] = '\0';
-
+    number = atoi(number_c_string);
     if(0 == i){
     	return false;
     }
+#endif
 
-    number = atoi(number_c_string);
 
+	// 同时设置 item->valuedouble 和 item->valueint
+
+	// 设置浮点数
+    item->valuedouble = number;
+
+	// 设置整型，并防止溢出
     /* use saturation in case of overflow */
     if (number >= INT_MAX)
     {
@@ -436,21 +457,26 @@ loop_end:
         item->valueint = (int)number;
     }
 
+	// 以上代码相当于 cJSON_SetNumberHelper 函数
+
+	// 设置类型
     item->type = cJSON_Number;
 
-    //input_buffer->offset += (size_t)(after_end - number_c_string);
+#ifndef CJSON_FOR_ESP8266
+	// 缓存区指针移动
+    input_buffer->offset += (size_t)(after_end - number_c_string);
+#else
     input_buffer->offset += (size_t)i;
-
+#endif
     return true;
 }
 
-#endif
-
-
-#ifndef FOR_ESP8266
+/*
+ * function: cJSON_SetNumberHelper
+ * description: 设置数字辅助函数
+ */
 /* don't ask me, but the original cJSON_SetNumberValue returns an integer or double */
-CJSON_PUBLIC(double) ICACHE_FLASH_ATTR
-cJSON_SetNumberHelper(cJSON *object, double number)
+CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
 {
     if (number >= INT_MAX)
     {
@@ -468,28 +494,7 @@ cJSON_SetNumberHelper(cJSON *object, double number)
     return object->valuedouble = number;
 }
 
-#else
-
-/*
- * function: cJSON_SetNumberHelper
- * description: 设置Number辅助函数
- */
-CJSON_PUBLIC(int) ICACHE_FLASH_ATTR
-cJSON_SetNumberHelper(cJSON *object, int number)
-{
-    if (number >= INT_MAX)
-    {
-        object->valueint = INT_MAX;
-    }
-    else if (number <= INT_MIN)
-    {
-        object->valueint = INT_MIN;
-    }
-    return object->valueint = number;
-}
-
-#endif
-
+/* 打印缓存结构体 */
 typedef struct
 {
     unsigned char *buffer;
@@ -501,9 +506,14 @@ typedef struct
     internal_hooks hooks;
 } printbuffer;
 
-/* realloc printbuffer if necessary to have at least "needed" bytes more */
-static unsigned char* ICACHE_FLASH_ATTR
-ensure(printbuffer * const p, size_t needed)
+/*
+ * function: ensure
+ * parameter: printbuffer * const p -
+ *            size_t needed -
+ * return: unsigned char*
+ * description: realloc printbuffer if necessary to have at least "needed" bytes more
+ */
+ICACHE_FLASH_ATTR static unsigned char* ensure(printbuffer * const p, size_t needed)
 {
     unsigned char *newbuffer = NULL;
     size_t newsize = 0;
@@ -557,6 +567,14 @@ ensure(printbuffer * const p, size_t needed)
     {
         /* reallocate with realloc if available */
         newbuffer = (unsigned char*)p->hooks.reallocate(p->buffer, newsize);
+        if (newbuffer == NULL)
+        {
+            p->hooks.deallocate(p->buffer);
+            p->length = 0;
+            p->buffer = NULL;
+
+            return NULL;
+        }
     }
     else
     {
@@ -583,8 +601,7 @@ ensure(printbuffer * const p, size_t needed)
 }
 
 /* calculate the new length of the string in a printbuffer and update the offset */
-static void ICACHE_FLASH_ATTR
-update_offset(printbuffer * const buffer)
+ICACHE_FLASH_ATTR static void update_offset(printbuffer * const buffer)
 {
     const unsigned char *buffer_pointer = NULL;
     if ((buffer == NULL) || (buffer->buffer == NULL))
@@ -596,10 +613,14 @@ update_offset(printbuffer * const buffer)
     buffer->offset += os_strlen((const char*)buffer_pointer);
 }
 
-#ifndef FOR_ESP8266
-/* Render the number nicely from the given item into a string. */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_number(const cJSON * const item, printbuffer * const output_buffer)
+/*
+ * function: print_number
+ * parameter:
+ * return: cJSON_bool -
+ * description: Render the number nicely from the given item into a string.
+ *              从给出的item友好地渲染，并放进string
+ */
+ICACHE_FLASH_ATTR static cJSON_bool print_number(const cJSON * const item, printbuffer * const output_buffer)
 {
     unsigned char *output_pointer = NULL;
     double d = item->valuedouble;
@@ -609,6 +630,7 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
     unsigned char decimal_point = get_decimal_point();
     double test;
 
+	// 检查参数
     if (output_buffer == NULL)
     {
         return false;
@@ -621,6 +643,7 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
     }
     else
     {
+#ifndef CJSON_FOR_ESP8266
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
         length = os_sprintf((char*)number_buffer, "%1.15g", d);
 
@@ -630,6 +653,10 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
             /* If not, print with 17 decimal places of precision */
             length = os_sprintf((char*)number_buffer, "%1.17g", d);
         }
+#else
+        // ESP8266 不支持float和double
+        length = os_sprintf((char*)number_buffer, "%d", item->valueint);
+#endif
     }
 
     /* os_sprintf failed or buffer overrun occured */
@@ -664,60 +691,11 @@ print_number(const cJSON * const item, printbuffer * const output_buffer)
     return true;
 }
 
-#else
-
-static cJSON_bool ICACHE_FLASH_ATTR
-print_number(const cJSON * const item, printbuffer * const output_buffer)
-{
-    unsigned char *output_pointer = NULL;
-    int d = item->valueint;
-    int length = 0;
-    size_t i = 0;
-    unsigned char number_buffer[26]; /* temporary buffer to print the number into */
-    unsigned char decimal_point = get_decimal_point();
-
-    if (output_buffer == NULL){
-        return false;
-    }
-
-    /* This checks for NaN and Infinity */
-    if ((d * 0) != 0){
-        length = os_sprintf((char*)number_buffer, "null");
-    }else{
-        /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
-        //length = os_sprintf((char*)number_buffer, "%1.15g", d);
-    	length = os_sprintf((char*)number_buffer, "%d", d);
-    }
-
-    /* os_sprintf failed or buffer overrun occured */
-    if ((length < 0) || (length > (int)(sizeof(number_buffer) - 1)))
-    {
-        return false;
-    }
-
-    /* reserve appropriate space in the output */
-    output_pointer = ensure(output_buffer, (size_t)length);
-    if (output_pointer == NULL){
-        return false;
-    }
-
-    /* copy the printed number to the output and replace locale
-     * dependent decimal point with '.' */
-    for (i = 0; i < ((size_t)length); i++){
-        output_pointer[i] = number_buffer[i];
-    }
-
-    output_pointer[i] = '\0';
-    output_buffer->offset += (size_t)length;
-
-    return true;
-}
-
-#endif
-
-/* parse 4 digit hexadecimal number */
-static unsigned ICACHE_FLASH_ATTR
-parse_hex4(const unsigned char * const input)
+/*
+ * function: parse_hex4
+ * description: parse 4 digit hexadecimal number
+ */
+ICACHE_FLASH_ATTR static unsigned parse_hex4(const unsigned char * const input)
 {
     unsigned int h = 0;
     size_t i = 0;
@@ -752,10 +730,13 @@ parse_hex4(const unsigned char * const input)
     return h;
 }
 
-/* converts a UTF-16 literal to UTF-8
- * A literal can be one or two sequences of the form \uXXXX */
-static unsigned char ICACHE_FLASH_ATTR
-utf16_literal_to_utf8(const unsigned char * const input_pointer, const unsigned char * const input_end, unsigned char **output_pointer)
+
+/*
+ * function: utf16_literal_to_utf8
+ * description: converts a UTF-16 literal to UTF-8
+ *              A literal can be one or two sequences of the form \uXXXX
+ */
+ICACHE_FLASH_ATTR static unsigned char utf16_literal_to_utf8(const unsigned char * const input_pointer, const unsigned char * const input_end, unsigned char **output_pointer)
 {
     long unsigned int codepoint = 0;
     unsigned int first_code = 0;
@@ -875,36 +856,51 @@ fail:
     return 0;
 }
 
-/* Parse the input text into an unescaped cinput, and populate item. */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_string(cJSON * const item, parse_buffer * const input_buffer)
+/*
+ * function: parse_string
+ * parameter: cJSON * const item - 输出的item
+ *            parse_buffer * const input_buffer - 要解析的字符串缓冲区
+ * return: cJSON_bool
+ * description: Parse the input text into an unescaped cinput, and populate item.
+ *              解析输入的文本，并放进
+ */
+ICACHE_FLASH_ATTR static cJSON_bool parse_string(cJSON * const item, parse_buffer * const input_buffer)
 {
     const unsigned char *input_pointer = buffer_at_offset(input_buffer) + 1;
-    const unsigned char *input_end = buffer_at_offset(input_buffer) + 1;
+    const unsigned char *input_end = buffer_at_offset(input_buffer) + 1;		// 初始化 input_end 指针
     unsigned char *output_pointer = NULL;
     unsigned char *output = NULL;
 
     /* not a string */
+	// 输入字符串检查，如果第一个字符不是分号
     if (buffer_at_offset(input_buffer)[0] != '\"')
     {
         goto fail;
     }
 
+
+	/*
+	 * 示例："Jack (\"Bee\") Nimble" - 4+1+9+1+6+1=22个字节
+	 * 减去转义字符，则只需要 20 字节的空间
+	 */
     {
         /* calculate approximate size of the output (overestimate) */
+		// 计算可能需要的输出空间
         size_t allocation_length = 0;
-        size_t skipped_bytes = 0;
+        size_t skipped_bytes = 0;		// 跳过的字节
+
+		// 如果 input_end 没有扫描到 input_buffer的末尾，并且input不等于 \"
         while (((size_t)(input_end - input_buffer->content) < input_buffer->length) && (*input_end != '\"'))
         {
             /* is escape sequence */
-            if (input_end[0] == '\\')
+            if (input_end[0] == '\\')	// 如果是转义字符
             {
                 if ((size_t)(input_end + 1 - input_buffer->content) >= input_buffer->length)
                 {
                     /* prevent buffer overflow when last input character is a backslash */
                     goto fail;
                 }
-                skipped_bytes++;
+                skipped_bytes++;		// 增加一个要跳过的字符
                 input_end++;
             }
             input_end++;
@@ -916,6 +912,7 @@ parse_string(cJSON * const item, parse_buffer * const input_buffer)
 
         /* This is at most how much we need for the output */
         allocation_length = (size_t) (input_end - buffer_at_offset(input_buffer)) - skipped_bytes;
+		// 通过 hooks.allocate 获取内存
         output = (unsigned char*)input_buffer->hooks.allocate(allocation_length + sizeof(""));
         if (output == NULL)
         {
@@ -923,15 +920,18 @@ parse_string(cJSON * const item, parse_buffer * const input_buffer)
         }
     }
 
+	// 设置输出指针
     output_pointer = output;
     /* loop through the string literal */
     while (input_pointer < input_end)
     {
+		// 如果不是转移字符，则直接拷贝
         if (*input_pointer != '\\')
         {
             *output_pointer++ = *input_pointer++;
         }
         /* escape sequence */
+		// 转义序列
         else
         {
             unsigned char sequence_length = 2;
@@ -981,9 +981,12 @@ parse_string(cJSON * const item, parse_buffer * const input_buffer)
     }
 
     /* zero terminate the output */
+	// 设置字符串末尾
     *output_pointer = '\0';
 
+	// 设置类型
     item->type = cJSON_String;
+	// 设置字符串值
     item->valuestring = (char*)output;
 
     input_buffer->offset = (size_t) (input_end - input_buffer->content);
@@ -1005,9 +1008,13 @@ fail:
     return false;
 }
 
-/* Render the cstring provided to an escaped version that can be printed. */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_string_ptr(const unsigned char * const input, printbuffer * const output_buffer)
+/*
+ * function: print_string_ptr
+ * parameter:
+ * return: cJSON_bool
+ * description: Render the cstring provided to an escaped version that can be printed.
+ */
+ICACHE_FLASH_ATTR static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffer * const output_buffer)
 {
     const unsigned char *input_pointer = NULL;
     unsigned char *output = NULL;
@@ -1128,28 +1135,35 @@ print_string_ptr(const unsigned char * const input, printbuffer * const output_b
     return true;
 }
 
-/* Invoke print_string_ptr (which is useful) on an item. */
 /*
  * function: print_string
+ * parameter:
+ * return: cJSON_bool
+ * description: Invoke print_string_ptr (which is useful) on an item.
  */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_string(const cJSON * const item, printbuffer * const p)
+ICACHE_FLASH_ATTR static cJSON_bool print_string(const cJSON * const item, printbuffer * const p)
 {
     return print_string_ptr((unsigned char*)item->valuestring, p);
 }
 
 /* Predeclare these prototypes. */
-static cJSON_bool ICACHE_FLASH_ATTR parse_value(cJSON * const item, parse_buffer * const input_buffer);
-static cJSON_bool ICACHE_FLASH_ATTR print_value(const cJSON * const item, printbuffer * const output_buffer);
-static cJSON_bool ICACHE_FLASH_ATTR parse_array(cJSON * const item, parse_buffer * const input_buffer);
-static cJSON_bool ICACHE_FLASH_ATTR print_array(const cJSON * const item, printbuffer * const output_buffer);
-static cJSON_bool ICACHE_FLASH_ATTR parse_object(cJSON * const item, parse_buffer * const input_buffer);
-static cJSON_bool ICACHE_FLASH_ATTR print_object(const cJSON * const item, printbuffer * const output_buffer);
+static cJSON_bool parse_value(cJSON * const item, parse_buffer * const input_buffer);
+static cJSON_bool print_value(const cJSON * const item, printbuffer * const output_buffer);
+static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buffer);
+static cJSON_bool print_array(const cJSON * const item, printbuffer * const output_buffer);
+static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_buffer);
+static cJSON_bool print_object(const cJSON * const item, printbuffer * const output_buffer);
 
-/* Utility to jump whitespace and cr/lf */
-static parse_buffer * ICACHE_FLASH_ATTR
-buffer_skip_whitespace(parse_buffer * const buffer)
+/*
+ * function: buffer_skip_whitespace
+ * parameter: parse_buffer * const buffer
+ * return: parse_buffer * -
+ * description: Utility to jump whitespace and cr/lf
+ *              跳过空格和'\r'、'\n'
+ */
+ICACHE_FLASH_ATTR static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
 {
+	// 检查参数
     if ((buffer == NULL) || (buffer->content == NULL))
     {
         return NULL;
@@ -1168,9 +1182,37 @@ buffer_skip_whitespace(parse_buffer * const buffer)
     return buffer;
 }
 
-/* Parse an object - create a new root, and populate. */
-CJSON_PUBLIC(cJSON *)  ICACHE_FLASH_ATTR
-cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
+/*
+ * function: skip_utf8_bom
+ * parameter: parse_buffer * const buffer
+ * return: parse_buffer *
+ * description: skip the UTF-8 BOM (byte order mark) if it is at the beginning of a buffer
+ */
+ICACHE_FLASH_ATTR static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
+{
+    if ((buffer == NULL) || (buffer->content == NULL) || (buffer->offset != 0))
+    {
+        return NULL;
+    }
+
+    if (can_access_at_index(buffer, 4) && (os_strncmp((const char*)buffer_at_offset(buffer), "\xEF\xBB\xBF", 3) == 0))
+    {
+        buffer->offset += 3;
+    }
+
+    return buffer;
+}
+
+/*
+ * function: cJSON_ParseWithOpts
+ * parameter: const char *value - 字符串值
+ *            const char **return_parse_end - output
+ *            cJSON_bool require_null_terminated -
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: Parse an object - create a new root, and populate.
+ *              解析一个对象 - 构建一个新的root，并移过去
+ */
+CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
 {
     parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
     cJSON *item = NULL;
@@ -1195,7 +1237,7 @@ cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool
         goto fail;
     }
 
-    if (!parse_value(item, buffer_skip_whitespace(&buffer)))
+    if (!parse_value(item, buffer_skip_whitespace(skip_utf8_bom(&buffer))))
     {
         /* parse failure. ep is set. */
         goto fail;
@@ -1210,6 +1252,7 @@ cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool
             goto fail;
         }
     }
+
     if (return_parse_end)
     {
         *return_parse_end = (const char*)buffer_at_offset(&buffer);
@@ -1217,6 +1260,7 @@ cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool
 
     return item;
 
+	// 错误处理
 fail:
     if (item != NULL)
     {
@@ -1242,26 +1286,37 @@ fail:
         {
             *return_parse_end = (const char*)local_error.json + local_error.position;
         }
-        else
-        {
-            global_error = local_error;
-        }
+
+        global_error = local_error;
     }
 
     return NULL;
 }
 
-/* Default options for cJSON_Parse */
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_Parse(const char *value)
+/*
+ * function: cJSON_Parse
+ * parameter: const char *value - 字符串值
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: Default options for cJSON_Parse
+ *              字符串解释成cJSON函数
+ */
+CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value)
 {
     return cJSON_ParseWithOpts(value, 0, 0);
 }
 
+// 比较大小
 #define cjson_min(a, b) ((a < b) ? a : b)
 
-static unsigned char * ICACHE_FLASH_ATTR
-print(const cJSON * const item, cJSON_bool format, const internal_hooks * const hooks)
+/*
+ * function: print
+ * parameter: const cJSON * const item - item
+ *            cJSON_bool format - 是否格式化
+ *            const internal_hooks * const hooks - 钩子函数
+ * return: unsigned char *
+ * description:
+ */
+ICACHE_FLASH_ATTR static unsigned char *print(const cJSON * const item, cJSON_bool format, const internal_hooks * const hooks)
 {
     printbuffer buffer[1];
     unsigned char *printed = NULL;
@@ -1323,21 +1378,23 @@ fail:
     return NULL;
 }
 
-/* Render a cJSON item/entity/structure to text. */
-CJSON_PUBLIC(char *) ICACHE_FLASH_ATTR
-cJSON_Print(const cJSON *item)
+/*
+ * function: cJSON_Print
+ * parameter: const cJSON *item
+ * return: CJSON_PUBLIC(char *)
+ * description: Render a cJSON item/entity/structure to text.
+ */
+CJSON_PUBLIC(char *) cJSON_Print(const cJSON *item)
 {
     return (char*)print(item, true, &global_hooks);
 }
 
-CJSON_PUBLIC(char *) ICACHE_FLASH_ATTR
-cJSON_PrintUnformatted(const cJSON *item)
+CJSON_PUBLIC(char *) cJSON_PrintUnformatted(const cJSON *item)
 {
     return (char*)print(item, false, &global_hooks);
 }
 
-CJSON_PUBLIC(char *) ICACHE_FLASH_ATTR
-cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
+CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
 {
     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
 
@@ -1360,18 +1417,18 @@ cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
 
     if (!print_value(item, &p))
     {
+        global_hooks.deallocate(p.buffer);
         return NULL;
     }
 
     return (char*)p.buffer;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_PrintPreallocated(cJSON *item, char *buf, const int len, const cJSON_bool fmt)
+CJSON_PUBLIC(cJSON_bool) cJSON_PrintPreallocated(cJSON *item, char *buf, const int len, const cJSON_bool fmt)
 {
     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
 
-    if (len < 0)
+    if ((len < 0) || (buf == NULL))
     {
         return false;
     }
@@ -1386,10 +1443,17 @@ cJSON_PrintPreallocated(cJSON *item, char *buf, const int len, const cJSON_bool 
     return print_value(item, &p);
 }
 
-/* Parser core - when encountering text, process appropriately. */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_value(cJSON * const item, parse_buffer * const input_buffer)
+/*
+ * function: parse_value
+ * parameter: cJSON * const item -
+ *            parse_buffer * const input_buffer - 解析缓冲结构体
+ * return: cJSON_bool
+ * description: Parser core - when encountering text, process appropriately.
+ *              解析核心函数
+ */
+static cJSON_bool parse_value(cJSON * const item, parse_buffer * const input_buffer)
 {
+	// 检查输入
     if ((input_buffer == NULL) || (input_buffer->content == NULL))
     {
         return false; /* no input */
@@ -1400,14 +1464,14 @@ parse_value(cJSON * const item, parse_buffer * const input_buffer)
     if (can_read(input_buffer, 4) && (os_strncmp((const char*)buffer_at_offset(input_buffer), "null", 4) == 0))
     {
         item->type = cJSON_NULL;
-        input_buffer->offset += 4;
+        input_buffer->offset += 4;	// 跳过 null
         return true;
     }
     /* false */
     if (can_read(input_buffer, 5) && (os_strncmp((const char*)buffer_at_offset(input_buffer), "false", 5) == 0))
     {
         item->type = cJSON_False;
-        input_buffer->offset += 5;
+        input_buffer->offset += 5;	// 跳过 false
         return true;
     }
     /* true */
@@ -1415,37 +1479,46 @@ parse_value(cJSON * const item, parse_buffer * const input_buffer)
     {
         item->type = cJSON_True;
         item->valueint = 1;
-        input_buffer->offset += 4;
+        input_buffer->offset += 4;	// 跳过 true
         return true;
     }
     /* string */
+	// && 第一个字符是分号
     if (can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\"'))
     {
         return parse_string(item, input_buffer);
     }
     /* number */
+	// && [第一个字符 是负号（-） 或者 是大于'0'且小于'9']
     if (can_access_at_index(input_buffer, 0) && ((buffer_at_offset(input_buffer)[0] == '-') || ((buffer_at_offset(input_buffer)[0] >= '0') && (buffer_at_offset(input_buffer)[0] <= '9'))))
     {
         return parse_number(item, input_buffer);
     }
     /* array */
+	// && 第一个字符'['
     if (can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '['))
     {
         return parse_array(item, input_buffer);
     }
     /* object */
+	// && 第一个字符'{'
     if (can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '{'))
     {
         return parse_object(item, input_buffer);
     }
 
-
     return false;
 }
 
-/* Render a value to text. */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_value(const cJSON * const item, printbuffer * const output_buffer)
+/*
+ * function: print_value
+ * parameter:const cJSON * const item -
+ *                 printbuffer * const output_buffer -
+ * return: cJSON_bool
+ * description: Render a value to text.
+ *              渲染value到文本
+ */
+ICACHE_FLASH_ATTR static cJSON_bool print_value(const cJSON * const item, printbuffer * const output_buffer)
 {
     unsigned char *output = NULL;
 
@@ -1454,6 +1527,7 @@ print_value(const cJSON * const item, printbuffer * const output_buffer)
         return false;
     }
 
+	// 选择类型
     switch ((item->type) & 0xFF)
     {
         case cJSON_NULL:
@@ -1522,19 +1596,27 @@ print_value(const cJSON * const item, printbuffer * const output_buffer)
     }
 }
 
-/* Build an array from input text. */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_array(cJSON * const item, parse_buffer * const input_buffer)
+/*
+ * function: parse_array
+ * parameter: cJSON * const item - 输出的item
+ *            parse_buffer * const input_buffer - 输入的缓冲
+ * return: cJSON_bool
+ * description: Build an array from input text.
+ */
+ICACHE_FLASH_ATTR static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buffer)
 {
     cJSON *head = NULL; /* head of the linked list */
     cJSON *current_item = NULL;
 
+	// 检查输入的缓冲
+	// 如果深度 >= CJSON_NESTING_LIMIT（默认1000） ，则出错
     if (input_buffer->depth >= CJSON_NESTING_LIMIT)
     {
         return false; /* to deeply nested */
     }
     input_buffer->depth++;
 
+	// 检查第一个字符是不是 '['
     if (buffer_at_offset(input_buffer)[0] != '[')
     {
         /* not an array */
@@ -1601,6 +1683,7 @@ parse_array(cJSON * const item, parse_buffer * const input_buffer)
 success:
     input_buffer->depth--;
 
+	// 设置类型
     item->type = cJSON_Array;
     item->child = head;
 
@@ -1617,9 +1700,13 @@ fail:
     return false;
 }
 
-/* Render an array to text */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_array(const cJSON * const item, printbuffer * const output_buffer)
+/*
+ * function: print_array
+ * parameter: const cJSON * const item -
+              printbuffer * const output_buffer
+ * description: Render an array to text
+ */
+ICACHE_FLASH_ATTR static cJSON_bool print_array(const cJSON * const item, printbuffer * const output_buffer)
 {
     unsigned char *output_pointer = NULL;
     size_t length = 0;
@@ -1680,9 +1767,14 @@ print_array(const cJSON * const item, printbuffer * const output_buffer)
     return true;
 }
 
-/* Build an object from the text. */
-static cJSON_bool ICACHE_FLASH_ATTR
-parse_object(cJSON * const item, parse_buffer * const input_buffer)
+/*
+ * function: parse_object
+ * parameter: cJSON * const item -
+ *            parse_buffer * const input_buffer
+ * return: cJSON_bool
+ * description: Build an object from the text.
+ */
+ICACHE_FLASH_ATTR static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_buffer)
 {
     cJSON *head = NULL; /* linked list head */
     cJSON *current_item = NULL;
@@ -1790,9 +1882,11 @@ fail:
     return false;
 }
 
-/* Render an object to text. */
-static cJSON_bool ICACHE_FLASH_ATTR
-print_object(const cJSON * const item, printbuffer * const output_buffer)
+/*
+ * function: print_object
+ * description: Render an object to text.
+ */
+ICACHE_FLASH_ATTR static cJSON_bool print_object(const cJSON * const item, printbuffer * const output_buffer)
 {
     unsigned char *output_pointer = NULL;
     size_t length = 0;
@@ -1906,24 +2000,33 @@ print_object(const cJSON * const item, printbuffer * const output_buffer)
 }
 
 /* Get Array size/item / object item. */
-CJSON_PUBLIC(int) ICACHE_FLASH_ATTR
-cJSON_GetArraySize(const cJSON *array)
+CJSON_PUBLIC(int) cJSON_GetArraySize(const cJSON *array)
 {
-    cJSON *c = array->child;
-    size_t i = 0;
-    while(c)
+    cJSON *child = NULL;
+    size_t size = 0;
+
+    if (array == NULL)
     {
-        i++;
-        c = c->next;
+        return 0;
+    }
+
+    child = array->child;
+
+    while(child != NULL)
+    {
+        size++;
+        child = child->next;
     }
 
     /* FIXME: Can overflow here. Cannot be fixed without breaking the API */
 
-    return (int)i;
+    return (int)size;
 }
 
-static cJSON* ICACHE_FLASH_ATTR
-get_array_item(const cJSON *array, size_t index)
+/*
+ * function: get_array_item
+ */
+ICACHE_FLASH_ATTR static cJSON* get_array_item(const cJSON *array, size_t index)
 {
     cJSON *current_child = NULL;
 
@@ -1942,8 +2045,7 @@ get_array_item(const cJSON *array, size_t index)
     return current_child;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_GetArrayItem(const cJSON *array, int index)
+CJSON_PUBLIC(cJSON *) cJSON_GetArrayItem(const cJSON *array, int index)
 {
     if (index < 0)
     {
@@ -1953,26 +2055,34 @@ cJSON_GetArrayItem(const cJSON *array, int index)
     return get_array_item(array, (size_t)index);
 }
 
-static cJSON * ICACHE_FLASH_ATTR
-get_object_item(const cJSON * const object, const char * const name, const cJSON_bool case_sensitive)
+/*
+ * function: get_object_item
+ * parameter: const cJSON * const object -
+ *            const char * const name -
+ *            const cJSON_bool case_sensitive - 是否区分大小写
+ * description:
+ */
+ICACHE_FLASH_ATTR static cJSON *get_object_item(const cJSON * const object, const char * const name, const cJSON_bool case_sensitive)
 {
     cJSON *current_element = NULL;
 
+	// 检查参数
     if ((object == NULL) || (name == NULL))
     {
         return NULL;
     }
 
+	// 当前元素
     current_element = object->child;
-    if (case_sensitive)
-    {
-        while ((current_element != NULL) && (os_strcmp(name, current_element->string) != 0))
+    if (case_sensitive)	// 是否区分大小写
+    {	// 遍历查找
+        while ((current_element != NULL) && (strcmp(name, current_element->string) != 0))
         {
             current_element = current_element->next;
         }
     }
     else
-    {
+    {	// 遍历查找
         while ((current_element != NULL) && (case_insensitive_strcmp((const unsigned char*)name, (const unsigned char*)(current_element->string)) != 0))
         {
             current_element = current_element->next;
@@ -1982,54 +2092,95 @@ get_object_item(const cJSON * const object, const char * const name, const cJSON
     return current_element;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_GetObjectItem(const cJSON * const object, const char * const string)
+/*
+ * function: cJSON_GetObjectItem
+ * description:
+ */
+CJSON_PUBLIC(cJSON *) cJSON_GetObjectItem(const cJSON * const object, const char * const string)
 {
     return get_object_item(object, string, false);
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string)
+/*
+ * function: cJSON_GetObjectItemCaseSensitive
+ * description:
+ */
+CJSON_PUBLIC(cJSON *) cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string)
 {
     return get_object_item(object, string, true);
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_HasObjectItem(const cJSON *object, const char *string)
+/*
+ * function: cJSON_HasObjectItem
+ * parameter: const cJSON *object - 一个cJSON对象
+ *            const char *string - JSON的key
+ * return: CJSON_PUBLIC(cJSON_bool)
+ * description: 是否有某个Key，遍历查找
+ */
+CJSON_PUBLIC(cJSON_bool) cJSON_HasObjectItem(const cJSON *object, const char *string)
 {
     return cJSON_GetObjectItem(object, string) ? 1 : 0;
 }
 
-/* Utility for array list handling. */
-static void ICACHE_FLASH_ATTR
-suffix_object(cJSON *prev, cJSON *item)
+/*
+ * function: suffix_object
+ * parameter: cJSON *prev -
+ *            cJSON *item -
+ * return: void
+ * description: Utility for array list handling.
+ *              数组链表处理
+ */
+ICACHE_FLASH_ATTR static void suffix_object(cJSON *prev, cJSON *item)
 {
-    prev->next = item;
-    item->prev = prev;
+    prev->next = item;	// 前一个节点设置next
+    item->prev = prev;	// 给当前节点设置prev
 }
 
-/* Utility for handling references. */
-static cJSON * ICACHE_FLASH_ATTR
-create_reference(const cJSON *item, const internal_hooks * const hooks)
+/*
+ * function: create_reference
+ * parameter: const cJSON *item -
+ *            const internal_hooks * const hooks - 钩子函数
+ * return: cJSON *
+ * description: Utility for handling references.
+ *              创建一个cJSON的引用
+ */
+ICACHE_FLASH_ATTR static cJSON *create_reference(const cJSON *item, const internal_hooks * const hooks)
 {
-    cJSON *ref = cJSON_New_Item(hooks);
-    if (!ref)
+    cJSON *reference = NULL;
+    if (item == NULL)
     {
         return NULL;
     }
-    os_memcpy(ref, item, sizeof(cJSON));
-    ref->string = NULL;
-    ref->type |= cJSON_IsReference;
-    ref->next = ref->prev = NULL;
-    return ref;
+
+    reference = cJSON_New_Item(hooks);
+    if (reference == NULL)
+    {
+        return NULL;
+    }
+
+    os_memcpy(reference, item, sizeof(cJSON));
+    reference->string = NULL;
+    reference->type |= cJSON_IsReference;
+    reference->next = reference->prev = NULL;
+    return reference;
 }
 
-/* Add item to array/object. */
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_AddItemToArray(cJSON *array, cJSON *item)
+/**********************************************************************/
+// cJSON_AddItemToXXX function
+
+/*
+ * function: cJSON_AddItemToArray
+ * parameter: cJSON *array -
+ *            cJSON *item
+ * return: CJSON_PUBLIC(void)
+ * description: Add item to array/object.
+ *              用于给array和object添加item，即cJSON的obeject和array是一个链表
+ */
+CJSON_PUBLIC(void) cJSON_AddItemToArray(cJSON *array, cJSON *item)
 {
     cJSON *child = NULL;
 
+	// 检查参数
     if ((item == NULL) || (array == NULL))
     {
         return;
@@ -2053,56 +2204,79 @@ cJSON_AddItemToArray(cJSON *array, cJSON *item)
     }
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
+CJSON_PUBLIC(void) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
 {
+    if (item == NULL)
+    {
+        return;
+    }
+
     /* call cJSON_AddItemToObjectCS for code reuse */
     cJSON_AddItemToObjectCS(object, (char*)cJSON_strdup((const unsigned char*)string, &global_hooks), item);
     /* remove cJSON_StringIsConst flag */
     item->type &= ~cJSON_StringIsConst;
 }
 
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+/**********************************************************************/
+
+#if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
     #pragma GCC diagnostic push
 #endif
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #endif
 
-/* Add an item to an object with constant string as key */
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
+/*
+ * function: cJSON_AddItemToObjectCS
+ * parameter: cJSON *object - 要添加进的object
+ *            const char *string - JSON的键名称
+ *            cJSON *item - 添加的item
+ * description: Add an item to an object with constant string as key
+ */
+CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
 {
-    if (!item)
+    // 检查参数
+    if ((item == NULL) || (string == NULL))
     {
         return;
     }
+
     if (!(item->type & cJSON_StringIsConst) && item->string)
     {
         global_hooks.deallocate(item->string);
     }
+
     item->string = (char*)string;
     item->type |= cJSON_StringIsConst;
-    cJSON_AddItemToArray(object, item);
+
+    cJSON_AddItemToArray(object, item); // 作为数组添加进obeject
 }
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+
+#if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
     #pragma GCC diagnostic pop
 #endif
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
+CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 {
+    if (array == NULL)
+    {
+        return;
+    }
+
     cJSON_AddItemToArray(array, create_reference(item, &global_hooks));
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
+CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
 {
+    if ((object == NULL) || (string == NULL))
+    {
+        return;
+    }
+
     cJSON_AddItemToObject(object, string, create_reference(item, &global_hooks));
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
+CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
 {
     if ((parent == NULL) || (item == NULL))
     {
@@ -2132,8 +2306,7 @@ cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_DetachItemFromArray(cJSON *array, int which)
+CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromArray(cJSON *array, int which)
 {
     if (which < 0)
     {
@@ -2143,43 +2316,37 @@ cJSON_DetachItemFromArray(cJSON *array, int which)
     return cJSON_DetachItemViaPointer(array, get_array_item(array, (size_t)which));
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_DeleteItemFromArray(cJSON *array, int which)
+CJSON_PUBLIC(void) cJSON_DeleteItemFromArray(cJSON *array, int which)
 {
     cJSON_Delete(cJSON_DetachItemFromArray(array, which));
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_DetachItemFromObject(cJSON *object, const char *string)
+CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObject(cJSON *object, const char *string)
 {
     cJSON *to_detach = cJSON_GetObjectItem(object, string);
 
     return cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string)
+CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string)
 {
     cJSON *to_detach = cJSON_GetObjectItemCaseSensitive(object, string);
 
     return cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_DeleteItemFromObject(cJSON *object, const char *string)
+CJSON_PUBLIC(void) cJSON_DeleteItemFromObject(cJSON *object, const char *string)
 {
     cJSON_Delete(cJSON_DetachItemFromObject(object, string));
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
+CJSON_PUBLIC(void) cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
 {
     cJSON_Delete(cJSON_DetachItemFromObjectCaseSensitive(object, string));
 }
 
 /* Replace array/object items with new ones. */
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
+CJSON_PUBLIC(void) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
 {
     cJSON *after_inserted = NULL;
 
@@ -2208,10 +2375,9 @@ cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
     }
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement)
+CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement)
 {
-    if ((parent == NULL) || (replacement == NULL))
+    if ((parent == NULL) || (replacement == NULL) || (item == NULL))
     {
         return false;
     }
@@ -2244,8 +2410,7 @@ cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * re
     return true;
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
+CJSON_PUBLIC(void) cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
 {
     if (which < 0)
     {
@@ -2255,10 +2420,9 @@ cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
     cJSON_ReplaceItemViaPointer(array, get_array_item(array, (size_t)which), newitem);
 }
 
-static cJSON_bool ICACHE_FLASH_ATTR
-replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJSON_bool case_sensitive)
+ICACHE_FLASH_ATTR static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJSON_bool case_sensitive)
 {
-    if (replacement == NULL)
+    if ((replacement == NULL) || (string == NULL))
     {
         return false;
     }
@@ -2276,21 +2440,21 @@ replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJ
     return true;
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
+CJSON_PUBLIC(void) cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
 {
     replace_item_in_object(object, string, newitem, false);
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem)
+CJSON_PUBLIC(void) cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem)
 {
     replace_item_in_object(object, string, newitem, true);
 }
 
+/****************************************************************/
+// cJSON_CreateXXX function
+
 /* Create basic types: */
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateNull(void)
+CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2301,8 +2465,7 @@ cJSON_CreateNull(void)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateTrue(void)
+CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2313,8 +2476,7 @@ cJSON_CreateTrue(void)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateFalse(void)
+CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2325,8 +2487,7 @@ cJSON_CreateFalse(void)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateBool(cJSON_bool b)
+CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool b)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2337,11 +2498,16 @@ cJSON_CreateBool(cJSON_bool b)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateNumber(double num)
+/*
+ * function: cJSON_CreateNumber
+ * parameter: double num
+ * return: CJSON_PUBLIC(cJSON *)
+ * description:
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
-    if(item)
+    cJSON *item = cJSON_New_Item(&global_hooks);	// 构建一个新的item
+    if(item)	// 如果不为空，则设置数值
     {
         item->type = cJSON_Number;
         item->valuedouble = num;
@@ -2364,8 +2530,13 @@ cJSON_CreateNumber(double num)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateString(const char *string)
+/*
+ * function: cJSON_CreateString
+ * parameter: const char *string
+ * return: CJSON_PUBLIC(cJSON *)
+ * description:
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2382,8 +2553,13 @@ cJSON_CreateString(const char *string)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateRaw(const char *raw)
+/*
+ * function: cJSON_CreateRaw
+ * parameter: const char *raw
+ * return: CJSON_PUBLIC(cJSON *)
+ * description:
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2400,8 +2576,12 @@ cJSON_CreateRaw(const char *raw)
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateArray(void)
+/*
+ * function: cJSON_CreateArray
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个Array
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
@@ -2414,12 +2594,14 @@ cJSON_CreateArray(void)
 
 /*
  * function: cJSON_CreateObject
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个Object
  */
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateObject(void)
+CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void)
 {
     cJSON *item = cJSON_New_Item(&global_hooks);
-    if (item){
+    if (item)
+    {
         item->type = cJSON_Object;
     }
 
@@ -2427,15 +2609,23 @@ cJSON_CreateObject(void)
 }
 
 /* Create Arrays: */
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateIntArray(const int *numbers, int count)
+
+/*
+ * function: cJSON_CreateIntArray
+ * parameter: const int *numbers - 一个包含int的数组
+ *            int count - 数组长度
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个Int Array，以循环的方式
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
     cJSON *p = NULL;
     cJSON *a = NULL;
 
-    if (count < 0)
+	// 检查参数
+    if ((count < 0) || (numbers == NULL))
     {
         return NULL;
     }
@@ -2449,29 +2639,33 @@ cJSON_CreateIntArray(const int *numbers, int count)
             cJSON_Delete(a);
             return NULL;
         }
-        if(!i)
+        if(!i)	// 如果 i == 0
         {
             a->child = n;
         }
         else
         {
-            suffix_object(p, n);
+            suffix_object(p, n);	// 设置数组链表
         }
-        p = n;
+        p = n;	// 把当前节点缓存起来，作为上一节点
     }
 
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateFloatArray(const float *numbers, int count)
+/*
+ * function: cJSON_CreateFloatArray
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个Float Array
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
     cJSON *p = NULL;
     cJSON *a = NULL;
 
-    if (count < 0)
+    if ((count < 0) || (numbers == NULL))
     {
         return NULL;
     }
@@ -2500,15 +2694,19 @@ cJSON_CreateFloatArray(const float *numbers, int count)
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateDoubleArray(const double *numbers, int count)
+/*
+ * function: cJSON_CreateDoubleArray
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个Double Array
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
     cJSON *p = NULL;
     cJSON *a = NULL;
 
-    if (count < 0)
+    if ((count < 0) || (numbers == NULL))
     {
         return NULL;
     }
@@ -2537,15 +2735,19 @@ cJSON_CreateDoubleArray(const double *numbers, int count)
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_CreateStringArray(const char **strings, int count)
+/*
+ * function: cJSON_CreateStringArray
+ * return: CJSON_PUBLIC(cJSON *)
+ * description: 构建一个字符串Array
+ */
+CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char **strings, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
     cJSON *p = NULL;
     cJSON *a = NULL;
 
-    if (count < 0)
+    if ((count < 0) || (strings == NULL))
     {
         return NULL;
     }
@@ -2574,9 +2776,10 @@ cJSON_CreateStringArray(const char **strings, int count)
     return a;
 }
 
+/****************************************************************/
+
 /* Duplication */
-CJSON_PUBLIC(cJSON *) ICACHE_FLASH_ATTR
-cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
 {
     cJSON *newitem = NULL;
     cJSON *child = NULL;
@@ -2655,10 +2858,19 @@ fail:
     return NULL;
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_Minify(char *json)
+/*
+ * function: cJSON_Minify
+ * description: 去除字符串中的空格、\t、\r、\n等字符
+ */
+CJSON_PUBLIC(void) cJSON_Minify(char *json)
 {
     unsigned char *into = (unsigned char*)json;
+
+    if (json == NULL)
+    {
+        return;
+    }
+
     while (*json)
     {
         if (*json == ' ')
@@ -2720,10 +2932,11 @@ cJSON_Minify(char *json)
     *into = '\0';
 }
 
-/******************************************************************/
+/****************************************************************/
+// isXXX Function
+// 判断item的类型用
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsInvalid(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2733,8 +2946,7 @@ cJSON_IsInvalid(const cJSON * const item)
     return (item->type & 0xFF) == cJSON_Invalid;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsFalse(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2744,8 +2956,7 @@ cJSON_IsFalse(const cJSON * const item)
     return (item->type & 0xFF) == cJSON_False;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsTrue(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2756,8 +2967,7 @@ cJSON_IsTrue(const cJSON * const item)
 }
 
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsBool(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2766,8 +2976,7 @@ cJSON_IsBool(const cJSON * const item)
 
     return (item->type & (cJSON_True | cJSON_False)) != 0;
 }
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsNull(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2777,8 +2986,7 @@ cJSON_IsNull(const cJSON * const item)
     return (item->type & 0xFF) == cJSON_NULL;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsNumber(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2788,8 +2996,7 @@ cJSON_IsNumber(const cJSON * const item)
     return (item->type & 0xFF) == cJSON_Number;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsString(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2799,40 +3006,39 @@ cJSON_IsString(const cJSON * const item)
     return (item->type & 0xFF) == cJSON_String;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsArray(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item)
 {
-    if (item == NULL){
+    if (item == NULL)
+    {
         return false;
     }
 
     return (item->type & 0xFF) == cJSON_Array;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsObject(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item)
 {
-    if (item == NULL){
+    if (item == NULL)
+    {
         return false;
     }
 
     return (item->type & 0xFF) == cJSON_Object;
 }
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_IsRaw(const cJSON * const item)
+CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item)
 {
-    if (item == NULL){
+    if (item == NULL)
+    {
         return false;
     }
 
     return (item->type & 0xFF) == cJSON_Raw;
 }
 
-/******************************************************************/
+/****************************************************************/
 
-CJSON_PUBLIC(cJSON_bool) ICACHE_FLASH_ATTR
-cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
+CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
 {
     if ((a == NULL) || (b == NULL) || ((a->type & 0xFF) != (b->type & 0xFF)) || cJSON_IsInvalid(a))
     {
@@ -2840,7 +3046,8 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
     }
 
     /* check if type is valid */
-    switch (a->type & 0xFF){
+    switch (a->type & 0xFF)
+    {
         case cJSON_False:
         case cJSON_True:
         case cJSON_NULL:
@@ -2856,11 +3063,13 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
     }
 
     /* identical objects are equal */
-    if (a == b){
+    if (a == b)
+    {
         return true;
     }
 
-    switch (a->type & 0xFF){
+    switch (a->type & 0xFF)
+    {
         /* in these cases and equal type is enough */
         case cJSON_False:
         case cJSON_True:
@@ -2868,28 +3077,34 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
             return true;
 
         case cJSON_Number:
-            if (a->valuedouble == b->valuedouble){
+            if (a->valuedouble == b->valuedouble)
+            {
                 return true;
             }
             return false;
 
         case cJSON_String:
         case cJSON_Raw:
-            if ((a->valuestring == NULL) || (b->valuestring == NULL)){
+            if ((a->valuestring == NULL) || (b->valuestring == NULL))
+            {
                 return false;
             }
-            if (os_strcmp(a->valuestring, b->valuestring) == 0){
+            if (strcmp(a->valuestring, b->valuestring) == 0)
+            {
                 return true;
             }
 
             return false;
 
-        case cJSON_Array:{
+        case cJSON_Array:
+        {
             cJSON *a_element = a->child;
             cJSON *b_element = b->child;
 
-            for (; (a_element != NULL) && (b_element != NULL);){
-                if (!cJSON_Compare(a_element, b_element, case_sensitive)){
+            for (; (a_element != NULL) && (b_element != NULL);)
+            {
+                if (!cJSON_Compare(a_element, b_element, case_sensitive))
+                {
                     return false;
                 }
 
@@ -2897,19 +3112,45 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
                 b_element = b_element->next;
             }
 
+            /* one of the arrays is longer than the other */
+            if (a_element != b_element) {
+                return false;
+            }
+
             return true;
         }
 
-        case cJSON_Object:{
+        case cJSON_Object:
+        {
             cJSON *a_element = NULL;
-            cJSON_ArrayForEach(a_element, a){
+            cJSON *b_element = NULL;
+            cJSON_ArrayForEach(a_element, a)
+            {
                 /* TODO This has O(n^2) runtime, which is horrible! */
-                cJSON *b_element = get_object_item(b, a_element->string, case_sensitive);
-                if (b_element == NULL){
+                b_element = get_object_item(b, a_element->string, case_sensitive);
+                if (b_element == NULL)
+                {
                     return false;
                 }
 
-                if (!cJSON_Compare(a_element, b_element, case_sensitive)){
+                if (!cJSON_Compare(a_element, b_element, case_sensitive))
+                {
+                    return false;
+                }
+            }
+
+            /* doing this twice, once on a and b to prevent true comparison if a subset of b
+             * TODO: Do this the proper way, this is just a fix for now */
+            cJSON_ArrayForEach(b_element, b)
+            {
+                a_element = get_object_item(a, b_element->string, case_sensitive);
+                if (a_element == NULL)
+                {
+                    return false;
+                }
+
+                if (!cJSON_Compare(b_element, a_element, case_sensitive))
+                {
                     return false;
                 }
             }
@@ -2922,14 +3163,14 @@ cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool cas
     }
 }
 
-CJSON_PUBLIC(void *) ICACHE_FLASH_ATTR
-cJSON_malloc(size_t size)
+/****************************************************************/
+
+CJSON_PUBLIC(void *) cJSON_malloc(size_t size)
 {
     return global_hooks.allocate(size);
 }
 
-CJSON_PUBLIC(void) ICACHE_FLASH_ATTR
-cJSON_free(void *object)
+CJSON_PUBLIC(void) cJSON_free(void *object)
 {
     global_hooks.deallocate(object);
 }

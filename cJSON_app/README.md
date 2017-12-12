@@ -1,8 +1,8 @@
 # cJSON_app
 
-在ESP8266中使用cJSON，目前cJSON最新版本是1.5.3。
+移植cJSON到ESP8266，目前使用的cJSON版本是1.6.0。
 
-由于ESP8266不支持浮点数，修改了cJSON中有关double的函数。
+由于ESP8266不支持浮点数，在ESP8266中如果有浮点数则进行截断处理，总之不要在ESP8266中使用浮点数。
 
 效果图
 
@@ -10,17 +10,26 @@
 
 相关博客：http://blog.csdn.net/yannanxiu/article/details/52713746
 
-字符串解析成JSON示例
+
+# 字符串解析为cJSON示例
 
 ```
-u8* pdata = "{\"hello\":\"world\"}";
-cJSON *root = cJSON_Parse(pdata);
-print_preallocated(root);
-cJSON *hello = cJSON_GetObjectItemCaseSensitive(root, "hello");
-if (cJSON_IsString(hello)){
-    os_printf("hello %s!\r\n", hello->valuestring); // 打印「hello world!」
+// ...
+u8* data = "{\"string\":\"hello world\"}";
+cJSON * root = cJSON_Parse(data);
+if(NULL!=root){
+    if(cJSON_HasObjectItem(root, "string")){		// 是否有对应的item
+        cJSON *string = cJSON_GetObjectItem(root, "string");	// 获取item
+        if (cJSON_IsString(string)){			// 判断item的value是否是string类型
+            char *s = cJSON_Print(string);		// 渲染item的value为字符串
+            os_printf("string: %s\r\n", s);
+            cJSON_free((void *)s);				// 记得要释放
+        }
+    }
+    cJSON_Delete(root);
+}else{
+    os_printf("\r\nparse error!\r\n");
 }
-cJSON_Delete(root);
 ```
 
-生成JSON示例请参考cJSON_text.c文件里的代码。
+生成JSON示例请参考`cJSON_test.c`测试代码。

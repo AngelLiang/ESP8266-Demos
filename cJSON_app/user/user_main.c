@@ -61,7 +61,7 @@ extern int cJSON_test(void);
 void ICACHE_FLASH_ATTR
 user_init(void)
 {
-	uart_init(BIT_RATE_115200, BIT_RATE_115200);
+	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
 	os_delay_us(10000);
 
 	cJSON_test();
