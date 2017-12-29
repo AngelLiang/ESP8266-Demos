@@ -72,8 +72,7 @@ udp_server_recv(void *arg, char *pdata, unsigned short len)
 	udp_print_conn(arg);
 
 	// TODO:
-
-	espconn_send(pesp_conn, g_udp_buff, send_data_len);
+	espconn_send(pesp_conn, pdata, len);
 }
 
 

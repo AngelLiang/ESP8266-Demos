@@ -57,8 +57,7 @@ tcp_server_recv(void *arg, char *pdata, unsigned short len)
 	u16 send_data_len = 0;
 
 	// TODO:
-
-	//espconn_send(pesp_conn, g_tcp_buff, send_data_len);
+	espconn_send(pesp_conn, pdata, len);
 }
 
 /*
