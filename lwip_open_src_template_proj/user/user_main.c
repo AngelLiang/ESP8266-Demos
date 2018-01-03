@@ -25,6 +25,9 @@
 #include "ets_sys.h"
 #include "user_interface.h"
 
+#include "tcp_server.h"
+#include "udp_server.h"
+
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
  * Description  : SDK just reversed 4 sectors, used for rf init data and paramters.
@@ -70,7 +73,15 @@ user_rf_cal_sector_set(void)
     return rf_cal_sec;
 }
 
+
+
 void ICACHE_FLASH_ATTR
 user_init(void)
 {
+	os_printf("user_init\r\n");
+
+	tcp_server_init(18266);
+	udp_server_init(28266);
+
+	udp_demo_init();
 }
