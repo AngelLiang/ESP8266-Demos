@@ -83,5 +83,7 @@ user_init(void)
 	tcp_server_init(18266);
 	udp_server_init(28266);
 
+	tcpserver_init();
 	udp_demo_init();
+
 }

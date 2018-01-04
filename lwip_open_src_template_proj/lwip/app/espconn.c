@@ -379,9 +379,9 @@ espconn_sent(struct espconn *espconn, uint8 *psent, uint16 length)
 	value = espconn_find_connection(espconn, &pnode);
 
     if (value){
-    	espconn ->state = ESPCONN_WRITE;
+    	espconn ->state = ESPCONN_WRITE;	// 改变链接状态
 		switch (espconn ->type) {
-			case ESPCONN_TCP:
+			case ESPCONN_TCP:	// 如果是 TCP 链接
 				/* calling sent function frequently,make sure last packet has been backup or sent fully*/
 				if (pnode->pcommon.write_flag){
 					espconn_buf *pbuf = NULL;
@@ -425,7 +425,7 @@ espconn_sent(struct espconn *espconn, uint8 *psent, uint16 length)
 					return ESPCONN_ARG;
 				break;
 
-			case ESPCONN_UDP:
+			case ESPCONN_UDP:	// 如果是 UDP 链接
 				return espconn_udp_sent(pnode, psent, length);
 				break;
 

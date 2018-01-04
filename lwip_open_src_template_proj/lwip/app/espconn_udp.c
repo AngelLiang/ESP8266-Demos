@@ -292,6 +292,7 @@ espconn_udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     LWIP_DEBUGF(ESPCONN_UDP_DEBUG, ("espconn_udp_server_recv %d %p\n", __LINE__, upcb));
 
+    // 保存对端的IP地址
     precv->pcommon.remote_ip[0] = ip4_addr1_16(addr);
     precv->pcommon.remote_ip[1] = ip4_addr2_16(addr);
     precv->pcommon.remote_ip[2] = ip4_addr3_16(addr);
@@ -299,6 +300,7 @@ espconn_udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
     precv->pcommon.remote_port = port;
     precv->pcommon.pcb = upcb;
 
+    // 获取Wi-Fi信息
 	if (wifi_get_opmode() != 1) {
 		wifi_get_ip_info(1, &ipconfig);
 
@@ -309,6 +311,7 @@ espconn_udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
 		wifi_get_ip_info(0, &ipconfig);
 	}
 
+	// 保存本地的IP地址
 	precv->pespconn->proto.udp->local_ip[0] = ip4_addr1_16(&ipconfig.ip);
 	precv->pespconn->proto.udp->local_ip[1] = ip4_addr2_16(&ipconfig.ip);
 	precv->pespconn->proto.udp->local_ip[2] = ip4_addr3_16(&ipconfig.ip);
@@ -318,13 +321,13 @@ espconn_udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
     	pdata = (u8_t *)os_zalloc(p ->tot_len + 1);
     	length = pbuf_copy_partial(p, pdata, p ->tot_len, 0);
     	precv->pcommon.pcb = upcb;
-        pbuf_free(p);
+        pbuf_free(p);			// 释放p的内存
 		if (length != 0) {
-			if (precv->pespconn->recv_callback != NULL) {
+			if (precv->pespconn->recv_callback != NULL) {	// 如果接受回调函数不为空，则调用
 				precv->pespconn->recv_callback(precv->pespconn, pdata, length);
 			}
 		}
-		os_free(pdata);
+		os_free(pdata);	// 释放pdata内存
     } else {
         return;
     }
