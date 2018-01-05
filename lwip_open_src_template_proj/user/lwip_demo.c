@@ -43,6 +43,7 @@ udp_demo_init(void)
 	upcb = udp_new();
 	udp_bind(upcb, IP_ADDR_ANY, UDP_ECHO_PORT);
 	udp_recv(upcb, udp_demo_cb, NULL);
+	os_printf("udp_demo_init\r\n");
 }
 
 
@@ -102,4 +103,5 @@ tcpserver_init(void)
 
 	pcb = (struct tcp_pcb *)tcp_listen(pcb);	// 监听
 	tcp_accept(pcb, tcpserver_accept);	// 注册连接回调函数tcpserver_accept
+	os_printf("tcpserver_init\r\n");
 }

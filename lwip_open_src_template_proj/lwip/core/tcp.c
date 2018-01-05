@@ -41,6 +41,7 @@
  */
 
 #include "lwip/opt.h"
+#include "lwip/debug.h"
 
 #if LWIP_TCP /* don't build if not configured for use in lwipopts.h */
 
@@ -180,12 +181,12 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
      * or for a pcb that has been used and then entered the CLOSED state 
      * is erroneous, but this should never happen as the pcb has in those cases
      * been freed, and so any remaining handles are bogus. */
-     /*��CLOSED״̬�¹ر�һ��pcb�ƺ��Ǵ���ģ� 
-     *������ˣ�һ�������״̬�·����˶��һ�û��ʹ��,�û���ҪһЩ�취���ͷ��� 
-     *����һ���Ѿ����رյ�pcb��tcp_close(),(��2��)����һ���Ѿ���ʹ����֮�󣬽���CLOSE״̬�Ǵ���� 
-     *������Щ����±��ͷŵ�pcb�ǲ�����ڵ�,��ˣ��κ�ʣ��ľ���Ǽٵ� 
+     /*��CLOSED״̬�¹ر�һ��pcb�ƺ��Ǵ���ģ�
+     *������ˣ�һ�������״̬�·����˶��һ�û��ʹ��,�û���ҪһЩ�취���ͷ���
+     *����һ���Ѿ����رյ�pcb��tcp_close(),(��2��)����һ���Ѿ���ʹ����֮�󣬽���CLOSE״̬�Ǵ����
+     *������Щ����±��ͷŵ�pcb�ǲ�����ڵ�,��ˣ��κ�ʣ��ľ���Ǽٵ�
      */  
-    err = ERR_OK;//�趨����ֵ 
+    err = ERR_OK;//�趨����ֵ
     if (pcb->local_port != 0) {
     	TCP_RMV(&tcp_bound_pcbs, pcb); 
     }
@@ -194,7 +195,7 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
     break;
   case LISTEN:
     err = ERR_OK;
-    tcp_pcb_remove(&tcp_listen_pcbs.pcbs, pcb);//�Ӽ����PCB�б���ɾ���Ӧ��pcb  
+    tcp_pcb_remove(&tcp_listen_pcbs.pcbs, pcb);//�Ӽ����PCB�б���ɾ���Ӧ��pcb
     memp_free(MEMP_TCP_PCB_LISTEN, pcb);//��MEMP_TCP_PCB_LISTEN�ڴ�����趨�ͷŵ�pcb��Ԫֵ  ,�ͷ��ڴ�
     pcb = NULL;
     break;
@@ -262,12 +263,12 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
  *         another err_t if closing failed and pcb is not freed
  */
  /* 
- *ͨ��PCB�ر��������� 
- *�����е�pcbӦ�ñ��ͷŵģ�Ҳ����ԶҲ���ᱻʹ���� 
- *���û�����ӻ�����Ҳû�б�����,���ӵ�pcbӦ�ñ��ͷŵ� 
- *���һ�����ӱ�����(����SYN�Ѿ������ջ�����һ���ر��е�״̬) 
- *���ӱ��ر��ˣ�����������һ�����ڹرյ�״̬ 
- *pcb�Զ���tcp_slowtmr()�ͷ�,�����������ǲ���ȫ�� 
+ *ͨ��PCB�ر���������
+ *�����е�pcbӦ�ñ��ͷŵģ�Ҳ����ԶҲ���ᱻʹ����
+ *���û�����ӻ�����Ҳû�б�����,���ӵ�pcbӦ�ñ��ͷŵ�
+ *���һ�����ӱ�����(����SYN�Ѿ������ջ�����һ���ر��е�״̬)
+ *���ӱ��ر��ˣ�����������һ�����ڹرյ�״̬
+ *pcb�Զ���tcp_slowtmr()�ͷ�,�����������ǲ���ȫ��
  */ 
 err_t
 tcp_close(struct tcp_pcb *pcb)

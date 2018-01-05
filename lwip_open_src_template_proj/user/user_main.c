@@ -27,6 +27,7 @@
 
 #include "tcp_server.h"
 #include "udp_server.h"
+#include "telnet_server.h"
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -85,5 +86,7 @@ user_init(void)
 
 	tcpserver_init();
 	udp_demo_init();
+
+	telnet_init();
 
 }
