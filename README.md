@@ -11,6 +11,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | GPIO_app | 定时设置GPIO和GPIO的中断处理函数 |
 | IIC_app | IIC使用示例 |
 | ir_app | IR接口示例 |
+| lwip_open_src_template_proj | 官网提供的lwip示例工程，添加了一些个人示例代码 |
 | SmartConfig_app | 简单SmartConfig示例 |
 | SmartConfig+WiFi_app | 上电先SmartConfig，一段时间后WiFi连接 |
 | sniffer_app | sniffer使用示例 |
