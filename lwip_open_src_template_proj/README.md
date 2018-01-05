@@ -9,7 +9,7 @@ user文件夹下源代码说明
 - `lwip_demo.c`：基于lwip的raw/callback API的示例代码，包括TCP/UDP Server；
 - `telnet_server.c`：基于lwip的raw/callback API编写的Tenlet Server示例；
 
-![Tenlet Server][/screenshot/tenlet_server.png]
+![Tenlet Server](screenshot/tenlet_server.png)
 
 # lwip输出调试打印步骤
 
