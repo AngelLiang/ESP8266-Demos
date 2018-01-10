@@ -1,7 +1,7 @@
 /*
  * udp_server.c
  *
- *  Created on: 2017年7月3日
+ *  Created on: 2017锟斤拷7锟斤拷3锟斤拷
  *      Author: Administrator
  */
 
@@ -14,8 +14,8 @@ static u8 g_udp_buff[UDP_BUFF_SIZE];
 
 
 /*
- * 函数: udp_get_peer_conn
- * 说明：获取对端的UDP信息
+ * function: udp_get_peer_conn
+ * description: get udp peer connection information
  */
 static u8 ICACHE_FLASH_ATTR
 udp_get_peer_conn(void *arg)
@@ -32,8 +32,8 @@ udp_get_peer_conn(void *arg)
 }
 
 /*
- * 函数：udp_print_conn
- * 说明：打印UDP对面连接的信息
+ * function: udp_print_conn
+ * description: print udp connection information
  */
 static void ICACHE_FLASH_ATTR
 udp_print_conn(void *arg)
@@ -45,8 +45,8 @@ udp_print_conn(void *arg)
 }
 
 /*
- * 函数：udp_server_sent_cb
- * 说明：发送回调
+ * function: udp_server_sent_cb
+ * description:
  */
 static void ICACHE_FLASH_ATTR
 udp_server_sent_cb(void *arg)
@@ -55,8 +55,8 @@ udp_server_sent_cb(void *arg)
 }
 
 /*
- * 函数：udp_server_recv
- * 说明：UDP Server接收回调
+ * function: udp_server_recv
+ * description: UDP Server
  */
 static void ICACHE_FLASH_ATTR
 udp_server_recv(void *arg, char *pdata, unsigned short len)
@@ -73,8 +73,8 @@ udp_server_recv(void *arg, char *pdata, unsigned short len)
 
 
 /*
- * 函数：udp_server_init
- * 说明：UDP Server 初始化
+ * function: udp_server_init
+ * description: UDP Server init
  */
 void ICACHE_FLASH_ATTR
 udp_server_init(uint32 port)
@@ -87,8 +87,8 @@ udp_server_init(uint32 port)
 	s_udp_server.proto.udp = &s_espudp;
 	s_udp_server.proto.udp->local_port = port;
 
-	espconn_regist_recvcb(&s_udp_server, udp_server_recv);		//注册UDP接收回调函数
-	espconn_regist_sentcb(&s_udp_server, udp_server_sent_cb); 	//注册UDP发送回调函数
+	espconn_regist_recvcb(&s_udp_server, udp_server_recv);		//注锟斤拷UDP锟斤拷锟秸回碉拷锟斤拷锟斤拷
+	espconn_regist_sentcb(&s_udp_server, udp_server_sent_cb); 	//注锟斤拷UDP锟斤拷锟酵回碉拷锟斤拷锟斤拷
 	espconn_create(&s_udp_server);
 
 	os_printf("udp_server_init\r\n");
