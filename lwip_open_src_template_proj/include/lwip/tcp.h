@@ -151,6 +151,10 @@ enum tcp_state {
 #define DEF_ACCEPT_CALLBACK
 #endif /* LWIP_CALLBACK_API */
 
+// 先定义一个宏，在LwIP中定义了两种类型的TCP控制块
+// 一种专门用于描述处于LISTEN状态的连接
+// 另一种用于描述处于其他状态的连接
+// 这个宏定义出了两种类型控制块共有的一些字段
 /**
  * members common to struct tcp_pcb and struct tcp_listen_pcb
  */
@@ -165,17 +169,18 @@ enum tcp_state {
   u16_t local_port
 
 
+
 /* the TCP protocol control block */
 struct tcp_pcb {
 /** common PCB members */
-  IP_PCB;
+  IP_PCB;							// 在ip.h中定义
 /** protocol specific PCB members */
-  TCP_PCB_COMMON(struct tcp_pcb);
+  TCP_PCB_COMMON(struct tcp_pcb);	// 两种控制块都具有的字段
 
   /* ports are in host byte order */
-  u16_t remote_port;
+  u16_t remote_port;				// 远程端口号
   
-  u8_t flags;
+  u8_t flags;						 // 控制块状态、标志字段
 #define TF_ACK_DELAY   ((u8_t)0x01U)   /* Delayed ACK. */
 #define TF_ACK_NOW     ((u8_t)0x02U)   /* Immediate ACK. */
 #define TF_INFR        ((u8_t)0x04U)   /* In fast recovery. */
@@ -194,7 +199,9 @@ struct tcp_pcb {
   u32_t rcv_ann_right_edge; /* announced right edge of window */
 
   /* Timers */
+  // 某个状态的时间，控制块其他各计数器都基于tmr的值来实现
   u32_t tmr;
+  // 下面两个字段用于周期性的调用一个函数，pooltmr会周期性增加
   u8_t polltmr, pollinterval;
   
   /* Retransmission timer. */
