@@ -497,13 +497,15 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
   /* In the LISTEN state, we check for incoming SYN segments,
      creates a new PCB, and responds with a SYN|ACK. */
   if (flags & TCP_ACK) {
+	// 侦听到任何包含ACK的报文段，直接返回RST报文，
+	// SYN握手包不应该包含ACK
     /* For incoming segments with the ACK flag set, respond with a
        RST. */
     LWIP_DEBUGF(TCP_RST_DEBUG, ("tcp_listen_input: ACK in LISTEN, sending reset\n"));
     tcp_rst(ackno + 1, seqno + tcplen,
       ip_current_dest_addr(), ip_current_src_addr(),
       tcphdr->dest, tcphdr->src);
-  } else if (flags & TCP_SYN) {//�յ�SYN����
+  } else if (flags & TCP_SYN) {// 收到SYN握手报文
     LWIP_DEBUGF(TCP_DEBUG, ("TCP connection request %"U16_F" -> %"U16_F".\n", tcphdr->src, tcphdr->dest));
 #if TCP_LISTEN_BACKLOG
     if (pcb->accepts_pending >= pcb->backlog) {
@@ -521,13 +523,13 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     	TCP_STATS_INC(tcp.memerr);
     	return ERR_MEM;
     }
-    npcb = tcp_alloc(pcb->prio);//�������ƿ�
+    npcb = tcp_alloc(pcb->prio);// 为新连接创建一个控制块
     /* If a new PCB could not be created (probably due to lack of memory),
        we don't do anything, but rely on the sender will retransmit the
        SYN at a time when we have more memory available. */
     if (npcb == NULL) {
       LWIP_DEBUGF(TCP_DEBUG, ("tcp_listen_input: could not allocate PCB\n"));
-      TCP_STATS_INC(tcp.memerr);//TCP�ڴ�������
+      TCP_STATS_INC(tcp.memerr);
       return ERR_MEM;
     }
 
@@ -535,18 +537,20 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     pcb->accepts_pending++;
 #endif /* TCP_LISTEN_BACKLOG */
     /* Set up the new PCB. */
-    //���ƿ���������ص�4���ֶ�
+    // 设置新控制块中与连接相关的四个字段
     ip_addr_copy(npcb->local_ip, current_iphdr_dest);
     npcb->local_port = pcb->local_port;
     ip_addr_copy(npcb->remote_ip, current_iphdr_src);
     npcb->remote_port = tcphdr->src;
 
-	//���ƿ��������ֶ�
-    npcb->state = SYN_RCVD;//��������״̬
-    npcb->rcv_nxt = seqno + 1;//������һ������������
+	// 设置控制块中其余字段
+    npcb->state = SYN_RCVD; // 设置连接状态
+    npcb->rcv_nxt = seqno + 1;  // 设置下一个接收数据序号
     npcb->rcv_ann_right_edge = npcb->rcv_nxt;
-    npcb->snd_wnd = tcphdr->wnd;//���÷��ʹ���
+    npcb->snd_wnd = tcphdr->wnd;    // 设置发送窗口
     npcb->ssthresh = npcb->snd_wnd;
+    // snd_wl1设置为swqno-1，在收到对方ACK（含窗口通告）
+    // 后回迫使发送窗口更新
     npcb->snd_wl1 = seqno - 1;/* initialise to seqno-1 to force window update */
     npcb->callback_arg = pcb->callback_arg;
 #if LWIP_CALLBACK_API
@@ -568,11 +572,11 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 
     /* Send a SYN|ACK together with the MSS option. */
     rc = tcp_enqueue_flags(npcb, TCP_SYN | TCP_ACK);
-    if (rc != ERR_OK) {//��������ͷ��¿��ƿ�
+    if (rc != ERR_OK) {// 如果发生错误则释放新控制块
       tcp_abandon(npcb, 0);
       return rc;
     }
-    return tcp_output(npcb);//���ͱ���
+    return tcp_output(npcb);// 发送报文段
   }
   return ERR_OK;
 }
