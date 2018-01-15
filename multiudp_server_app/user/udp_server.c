@@ -1,7 +1,7 @@
 /*
  * udp_server.c
  *
- *  Created on: 2017年7月3日
+ *  Created on: 2017锟斤拷7锟斤拷3锟斤拷
  *      Author: Administrator
  */
 
@@ -16,13 +16,15 @@
 #include "udp_server.h"
 
 
+#define MULIT_UDP_IP "239.1.1.1"
+#define PORT		7777
+
 #define UDP_BUFF_SIZE		128
 static u8 g_udp_buff[UDP_BUFF_SIZE];
 
 
 /*
- * 函数: udp_get_peer_conn
- * 说明：获取对端的UDP信息
+ * function: udp_get_peer_conn
  */
 static u8 ICACHE_FLASH_ATTR
 udp_get_peer_conn(void *arg)
@@ -39,8 +41,7 @@ udp_get_peer_conn(void *arg)
 }
 
 /*
- * 函数：udp_print_conn
- * 说明：打印UDP对面连接的信息
+ * function: udp_print_conn
  */
 static void ICACHE_FLASH_ATTR
 udp_print_conn(void *arg)
@@ -52,8 +53,7 @@ udp_print_conn(void *arg)
 }
 
 /*
- * 函数：udp_server_sent_cb
- * 说明：发送回调
+ * function: udp_server_sent_cb
  */
 static void ICACHE_FLASH_ATTR
 udp_server_sent_cb(void *arg)
@@ -62,8 +62,7 @@ udp_server_sent_cb(void *arg)
 }
 
 /*
- * 函数：udp_server_recv
- * 说明：UDP Server接收回调
+ * function: udp_server_recv
  */
 static void ICACHE_FLASH_ATTR
 udp_server_recv(void *arg, char *pdata, unsigned short len)
@@ -80,33 +79,41 @@ udp_server_recv(void *arg, char *pdata, unsigned short len)
 	espconn_send(pesp_conn, pdata, len);
 }
 
-#define MULIT_UDP_IP "239.1.1.1"
+
 /*
- * 函数：multiudp_init
- * 说明：多播UDP初始化
+ * function: multiudp_init
  */
 void ICACHE_FLASH_ATTR
 multiudp_init(void)
 {
-	static struct ip_info info;
+	static struct ip_info sta_info;
+	static struct ip_info ap_info;
+	static ip_addr_t local_ip;
 	static ip_addr_t mulit_udp_ip;
 
 	mulit_udp_ip.addr = ipaddr_addr(MULIT_UDP_IP);
-	wifi_get_ip_info(STATION_IF, &info);
+	wifi_get_ip_info(SOFTAP_IF, &ap_info);
+	wifi_get_ip_info(STATION_IF, &sta_info);
 
-    os_printf("local ip:" IPSTR "\r\n", IP2STR(&info.ip));
+    os_printf("ap ip:" IPSTR "\r\n", IP2STR(&ap_info.ip));
+    os_printf("station ip:" IPSTR "\r\n", IP2STR(&sta_info.ip));
     os_printf("multi udp ip:" IPSTR "\r\n", IP2STR(&mulit_udp_ip));
-    s8 ret = espconn_igmp_join(&info.ip, &mulit_udp_ip);
+    s8 ret = espconn_igmp_join(&ap_info.ip, &mulit_udp_ip);
     if(ESPCONN_OK==ret){
-    	os_printf("multi udp join successful!\r\n");
-    	udp_server_init(28266);
+    	os_printf("ap multi udp join successful!\r\n");
     }
+    ret = espconn_igmp_join(&sta_info.ip, &mulit_udp_ip);
+    if(ESPCONN_OK==ret){
+    	os_printf("station multi udp join successful!\r\n");
+    }
+
+    udp_server_init(PORT);
 }
 
 
 /*
- * 函数：udp_server_init
- * 说明：UDP Server 初始化
+ * function: udp_server_init
+ * 说锟斤拷锟斤拷UDP Server 锟斤拷始锟斤拷
  */
 void ICACHE_FLASH_ATTR
 udp_server_init(uint32 port)
@@ -119,8 +126,8 @@ udp_server_init(uint32 port)
 	s_udp_server.proto.udp = &s_espudp;
 	s_udp_server.proto.udp->local_port = port;
 
-	espconn_regist_recvcb(&s_udp_server, udp_server_recv);		// 注册UDP接收回调函数
-	espconn_regist_sentcb(&s_udp_server, udp_server_sent_cb); 	// 注册UDP发送回调函数
+	espconn_regist_recvcb(&s_udp_server, udp_server_recv);
+	espconn_regist_sentcb(&s_udp_server, udp_server_sent_cb);
 	espconn_create(&s_udp_server);
 
 	os_printf("udp_discover_server_init\r\n");

@@ -85,7 +85,9 @@ void ICACHE_FLASH_ATTR
 init_done_cb_init(void)
 {
 	user_wifi_init();
-    //udp_server_init(28266);
+
+	//wifi_set_opmode(SOFTAP_MODE);
+	//udp_server_init(7777);
 }
 
 
@@ -101,7 +103,7 @@ user_init(void)
 	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
     os_printf("SDK version:%s\n", system_get_sdk_version());
 
-    // ÏµÍ³³õÊ¼»¯ºó»Øµ÷
+    // ÏµÍ³ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Øµï¿½
     system_init_done_cb(init_done_cb_init);
 }
 

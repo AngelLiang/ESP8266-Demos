@@ -1,7 +1,7 @@
 /*
  * user_wifi.c
  *
- *  Created on: 2017Äê7ÔÂ4ÈÕ
+ *  Created on: 2017ï¿½ï¿½7ï¿½ï¿½4ï¿½ï¿½
  *      Author: Administrator
  */
 
@@ -12,6 +12,7 @@
 #include "driver/uart.h"
 #include "udp_server.h"
 
+
 #define WIFI_SSID 		"your ssid"
 #define WIFI_PASSWORD	"your password"
 
@@ -19,7 +20,7 @@
 /*
  * function: got_ip_cb
  * parameter: void
- * description: station»ñÈ¡µ½ipµÄ»Øµ÷º¯Êý
+ * description: stationï¿½ï¿½È¡ï¿½ï¿½ipï¿½Ä»Øµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void ICACHE_FLASH_ATTR
 got_ip_cb(void)
@@ -31,13 +32,13 @@ got_ip_cb(void)
 
 /*
  * function: user_set_station_config
- * parameter: u8* ssid - Wi-FiµÄÃû³Æ
- *            u8 password - Wi-FiµÄÃÜÂë
+ * parameter: u8* ssid - Wi-Fiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ *            u8 password - Wi-Fiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void ICACHE_FLASH_ATTR
 user_set_station_config(u8* ssid, u8* password)
 {
-	 struct	station_config stationConf;
+	 static struct	station_config stationConf;
 	 stationConf.bssid_set = 0;		//need not check MAC address of AP
 	 os_memcpy(&stationConf.ssid, ssid, 32);
 	 os_memcpy(&stationConf.password, password, 64);
@@ -47,12 +48,12 @@ user_set_station_config(u8* ssid, u8* password)
 /*
  * function: wifi_handle_event_cb
  * parameter: System_Event_t *evt
- * description: WiFiÊÂ¼þ»Øµ÷
+ * description: WiFiï¿½Â¼ï¿½ï¿½Øµï¿½
  */
 void ICACHE_FLASH_ATTR
 wifi_handle_event_cb(System_Event_t *evt)
 {
-  os_printf("event %x\n", evt->event);
+  //os_printf("event %x\n", evt->event);
 
   switch (evt->event) {
       case EVENT_STAMODE_CONNECTED:
@@ -97,12 +98,13 @@ wifi_handle_event_cb(System_Event_t *evt)
 
 /*
  * function: user_wifi_init
- * description: Wi-FiÅäÖÃ³õÊ¼»¯
+ * description: Wi-Fiï¿½ï¿½ï¿½Ã³ï¿½Ê¼ï¿½ï¿½
  */
 void ICACHE_FLASH_ATTR
 user_wifi_init(void)
 {
-	wifi_set_opmode(STATION_MODE);
+	wifi_set_opmode(STATIONAP_MODE);
 	user_set_station_config(WIFI_SSID, WIFI_PASSWORD);
+	wifi_station_connect();
     wifi_set_event_handler_cb(wifi_handle_event_cb);
 }
