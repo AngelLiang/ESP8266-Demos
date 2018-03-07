@@ -1,8 +1,5 @@
 /*
  * smart_config.h
- *
- *  Created on: 2016Äê11ÔÂ8ÈÕ
- *      Author: Administrator
  */
 
 #ifndef _USER_SMARTCONFIG_H_
