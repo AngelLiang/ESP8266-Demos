@@ -1,8 +1,5 @@
 /*
  * user_gpio.h
- *
- *  Created on: 2017Äê7ÔÂ5ÈÕ
- *      Author: Administrator
  */
 
 #ifndef _USER_GPIO_H_

@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "ets_sys.h"
 #include "osapi.h"
 #include "user_interface.h"
@@ -42,97 +41,86 @@
  *                C : sdk parameters
  * Parameters   : none
  * Returns      : rf cal sector
-*******************************************************************************/
+ *******************************************************************************/
 uint32 ICACHE_FLASH_ATTR
-user_rf_cal_sector_set(void)
-{
-    enum flash_size_map size_map = system_get_flash_size_map();
-    uint32 rf_cal_sec = 0;
+user_rf_cal_sector_set(void) {
+	enum flash_size_map size_map = system_get_flash_size_map();
+	uint32 rf_cal_sec = 0;
 
-    switch (size_map) {
-        case FLASH_SIZE_4M_MAP_256_256:
-            rf_cal_sec = 128 - 5;
-            break;
+	switch (size_map) {
+	case FLASH_SIZE_4M_MAP_256_256:
+		rf_cal_sec = 128 - 5;
+		break;
 
-        case FLASH_SIZE_8M_MAP_512_512:
-            rf_cal_sec = 256 - 5;
-            break;
+	case FLASH_SIZE_8M_MAP_512_512:
+		rf_cal_sec = 256 - 5;
+		break;
 
-        case FLASH_SIZE_16M_MAP_512_512:
-        case FLASH_SIZE_16M_MAP_1024_1024:
-            rf_cal_sec = 512 - 5;
-            break;
+	case FLASH_SIZE_16M_MAP_512_512:
+	case FLASH_SIZE_16M_MAP_1024_1024:
+		rf_cal_sec = 512 - 5;
+		break;
 
-        case FLASH_SIZE_32M_MAP_512_512:
-        case FLASH_SIZE_32M_MAP_1024_1024:
-            rf_cal_sec = 1024 - 5;
-            break;
+	case FLASH_SIZE_32M_MAP_512_512:
+	case FLASH_SIZE_32M_MAP_1024_1024:
+		rf_cal_sec = 1024 - 5;
+		break;
 
-        default:
-            rf_cal_sec = 0;
-            break;
-    }
+	default:
+		rf_cal_sec = 0;
+		break;
+	}
 
-    return rf_cal_sec;
+	return rf_cal_sec;
 }
 
 void ICACHE_FLASH_ATTR
-user_rf_pre_init(void)
-{
-}
-
-
-
-void ICACHE_FLASH_ATTR
-print_chip_info(void)
-{
-    //±£¥Ê–æ∆¨MACµÿ÷∑
-    u8 macAddr[6] = {0};
-
-    os_printf("\n*********************************\r\n");
-	  //SDK∞Ê±æ–≈œ¢
-    os_printf("SDK version:%s\r\n", system_get_sdk_version());
-    //–æ∆¨–Ú¡–∫≈
-    os_printf("chip ID:%d\r\n", system_get_chip_id());
-    //CPU∆µ¬ 
-    os_printf("CPU freq:%d\r\n",system_get_cpu_freq());
-    //ø’œ–µƒ∂—ø’º‰
-    os_printf("free heap size:%d\r\n", system_get_free_heap_size());
-    //MACµÿ÷∑
-    if(wifi_get_macaddr(STATION_IF, macAddr)){	//‘⁄init_done_cb_init∫Ø ˝µ˜”√≤≈’˝≥£
-    	os_printf("MAC:"MACSTR"\r\n",MAC2STR(macAddr));
-    }else{
-    	os_printf("Get MAC fail!\r\n");
-    }
-    //ƒ⁄¥Ê–≈œ¢
-    os_printf("meminfo:\r\n");
-    system_print_meminfo();
-    os_printf("*********************************\r\n");
+user_rf_pre_init(void) {
 }
 
 void ICACHE_FLASH_ATTR
-init_done_cb_init(void)
-{
-    print_chip_info();
-    user_gpio_timer_init();
-    user_gpio_interrupt_init();
+print_chip_info(void) {
+	// ‰øùÂ≠òËäØÁâáMACÂú∞ÂùÄ
+	static u8 macAddr[6] = { 0 };
+
+	os_printf("\n*********************************\r\n");
+	// SDKÁâàÊú¨‰ø°ÊÅØ
+	os_printf("SDK version:%s\r\n", system_get_sdk_version());
+	// ËäØÁâáÂ∫èÂàóÂè∑
+	os_printf("chip ID:%d\r\n", system_get_chip_id());
+	// CPUÈ¢ëÁéá
+	os_printf("CPU freq:%d\r\n", system_get_cpu_freq());
+	// Á©∫Èó≤ÁöÑÂ†ÜÁ©∫Èó¥
+	os_printf("free heap size:%d\r\n", system_get_free_heap_size());
+	// MAC addr
+	if (wifi_get_macaddr(STATION_IF, macAddr)) {	// Âú®init_done_cb_initÂáΩÊï∞Ë∞ÉÁî®ÊâçÊ≠£Â∏∏
+		os_printf("MAC:"MACSTR"\r\n", MAC2STR(macAddr));
+	} else {
+		os_printf("MAC: null\r\n");
+	}
+	// ÂÜÖÂ≠ò‰ø°ÊÅØ
+	os_printf("meminfo:\r\n");
+	system_print_meminfo();
+	os_printf("*********************************\r\n");
 }
 
+void ICACHE_FLASH_ATTR
+init_done_cb_init(void) {
+	print_chip_info();
+	user_gpio_timer_init();
+	user_gpio_interrupt_init();
+}
 
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
  * Parameters   : none
  * Returns      : none
-*******************************************************************************/
+ *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_init(void)
-{
+user_init(void) {
 	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
-
-    os_printf("SDK version:%s\n", system_get_sdk_version());
-
-    // œµÕ≥≥ı ºªØ∫Ûªÿµ˜
-    system_init_done_cb(init_done_cb_init);
+	os_printf("SDK version:%s\n", system_get_sdk_version());
+	system_init_done_cb(init_done_cb_init);
 }
 

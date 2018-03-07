@@ -18,17 +18,16 @@
  * 函数：user_gpio_interrupt
  * 说明：GPIO中断处理函数
  */
-void user_gpio_interrupt(void *arg)
-{
+void user_gpio_interrupt(void *arg) {
 	u32 gpio_status;
 	gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
 	//clear interrupt status
 	GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
 
 	u8 gpio = GPIO_INPUT_GET(INT_GPIO);
-	os_delay_us(20*1000);		// 延时20ms，去抖动
-	if (gpio==GPIO_INPUT_GET(INT_GPIO)){
-		os_printf("GPIO %d: %d\r\n",INT_GPIO , gpio);
+	os_delay_us(20 * 1000);		// 延时20ms，去抖动
+	if (gpio == GPIO_INPUT_GET(INT_GPIO)) {
+		os_printf("GPIO %d: %d\r\n", INT_GPIO, gpio);
 	}
 }
 
@@ -37,8 +36,7 @@ void user_gpio_interrupt(void *arg)
  * 说明：GPIO中断处理初始化
  */
 void ICACHE_FLASH_ATTR
-user_gpio_interrupt_init(void)
-{
+user_gpio_interrupt_init(void) {
 	// 管脚功能选择
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 	// 设置管脚为输入
@@ -66,16 +64,14 @@ user_gpio_interrupt_init(void)
 	os_printf("user_gpio_interrupt_init\r\n");
 }
 
-
 /*
  * 函数：gpio_timer_cb
  * 说明：定时器回调控制GPIO
  */
 void ICACHE_FLASH_ATTR
-gpio_timer_cb(void *arg)
-{
+gpio_timer_cb(void *arg) {
 	u8 gpio = GPIO_INPUT_GET(TIMER_GPIO);
-	GPIO_OUTPUT_SET(TIMER_GPIO, 1-gpio);
+	GPIO_OUTPUT_SET(TIMER_GPIO, 1 - gpio);
 	//os_printf("GPIO 0: %d\r\n", gpio);
 }
 
@@ -84,17 +80,16 @@ gpio_timer_cb(void *arg)
  * 说明：定时改变GPIO的状态
  */
 void ICACHE_FLASH_ATTR
-user_gpio_timer_init(void)
-{
+user_gpio_timer_init(void) {
 	static volatile os_timer_t gpio_timer;
 
 	// 管脚功能选择
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
 
-    os_timer_disarm(&gpio_timer);
-    os_timer_setfn(&gpio_timer, (os_timer_func_t *)gpio_timer_cb, NULL);
-    os_timer_arm(&gpio_timer, GPIO_SET_INTERVAL, 1);
+	os_timer_disarm(&gpio_timer);
+	os_timer_setfn(&gpio_timer, (os_timer_func_t *) gpio_timer_cb, NULL);
+	os_timer_arm(&gpio_timer, GPIO_SET_INTERVAL, 1);
 
-    os_printf("user_gpio_timer_init\r\n");
+	os_printf("user_gpio_timer_init\r\n");
 }
 
