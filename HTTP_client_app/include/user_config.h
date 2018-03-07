@@ -34,12 +34,14 @@
 #define WIFI_SSID 		"WIFI_SSID"
 #define WIFI_PASSWORD	"WIFI_PASSWORD"
 
-#define HOST	"192.168.10.168"
-#define PORT	5000
+// baidu
+// baidu
+#define HOST	"119.75.217.109"
+#define PORT	80
 
-#define FILE_URL "/admin/fileadmin/download/test.txt"
-#define _HTTP_HEADER_HOST	"Host: 192.168.10.168:5000\r\n"
-#define HTTP_REQUEST "GET "FILE_URL" HTTP/1.1\r\n"_HTTP_HEADER_HOST"\r\n"
+#define FILE_URL "/"
+#define _HTTP_HEADER_HOST	"Host: 119.75.217.109:80\r\n"
+#define HTTP_REQUEST "GET "FILE_URL" HTTP/1.0\r\n"_HTTP_HEADER_HOST"\r\n"
 
 // 是否使用SSL
 #define SSL_CLIENT_ENABLE		0
