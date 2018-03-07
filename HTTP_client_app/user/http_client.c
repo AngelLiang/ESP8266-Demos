@@ -93,19 +93,30 @@ tcp_client_connect_cb(void *arg) {
 void ICACHE_FLASH_ATTR
 http_client_init(u8* ip, u16 port) {
 	static esp_tcp esptcp;
+	esp_tcp *pesptcp = &esptcp;
+
 	u32 u32_ip = ipaddr_addr(ip);
 
 	os_printf("http_client_init\n");
 
+//	g_tcp_client_conn.type = ESPCONN_TCP;
+//	g_tcp_client_conn.state = ESPCONN_NONE;
+//	g_tcp_client_conn.proto.tcp = pesptcp;
+
 	g_ptcp_conn->type = ESPCONN_TCP;
 	g_ptcp_conn->state = ESPCONN_NONE;
-	g_ptcp_conn->proto.tcp = &esptcp;
+	g_ptcp_conn->proto.tcp = pesptcp;
 
-	os_memcpy(g_ptcp_conn->proto.tcp->remote_ip, &u32_ip, 4); //set server ip
-	g_ptcp_conn->proto.tcp->remote_port = port;			//set server port
-	g_ptcp_conn->proto.tcp->local_port = espconn_port();
+	os_memcpy(pesptcp->remote_ip, &u32_ip, 4); //set server ip
+	pesptcp->remote_port = port;
+	pesptcp->local_port = espconn_port();
+
+//	os_memcpy(g_ptcp_conn->proto.tcp->remote_ip, &u32_ip, 4); //set server ip
+//	g_ptcp_conn->proto.tcp->remote_port = port;			//set server port
+//	g_ptcp_conn->proto.tcp->local_port = espconn_port();
 
 	espconn_regist_connectcb(g_ptcp_conn, tcp_client_connect_cb);
+
 }
 
 void ICACHE_FLASH_ATTR
@@ -119,7 +130,8 @@ http_client_connect(void) {
 #else
 	rc = espconn_connect(g_ptcp_conn);
 #endif
-
+	os_printf("local "IPSTR":%d\r\n", IP2STR(g_ptcp_conn->proto.tcp->local_ip),
+			g_ptcp_conn->proto.tcp->local_port);
 	os_printf("connect to "IPSTR":%d rc=%d\r\n",
 			IP2STR(g_ptcp_conn->proto.tcp->remote_ip),
 			g_ptcp_conn->proto.tcp->remote_port, rc);

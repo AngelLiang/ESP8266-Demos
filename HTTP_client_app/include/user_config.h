@@ -35,12 +35,14 @@
 #define WIFI_PASSWORD	"WIFI_PASSWORD"
 
 // baidu
-// baidu
-#define HOST	"119.75.217.109"
-#define PORT	80
+//#define HOST	"119.75.217.109"
+//#define PORT	80
+// local
+#define HOST	"192.168.0.50"
+#define PORT	5000
 
 #define FILE_URL "/"
-#define _HTTP_HEADER_HOST	"Host: 119.75.217.109:80\r\n"
+#define _HTTP_HEADER_HOST	"Host: "HOST"\r\n"
 #define HTTP_REQUEST "GET "FILE_URL" HTTP/1.0\r\n"_HTTP_HEADER_HOST"\r\n"
 
 // 是否使用SSL

@@ -27,6 +27,7 @@
 #include "osapi.h"
 #include "user_interface.h"
 #include "http_client.h"
+#include "user_config.h"
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set

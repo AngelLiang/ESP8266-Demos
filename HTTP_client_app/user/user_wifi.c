@@ -16,8 +16,6 @@
  */
 void ICACHE_FLASH_ATTR
 user_set_station_config(u8* ssid, u8* password) {
-	//u8	ssid[32] = "your ssid";
-	//u8	password[64] = "your password";
 	struct station_config stationConf;
 	stationConf.bssid_set = 0;		//need	not	check	MAC	address	of	AP
 	os_memcpy(&stationConf.ssid, ssid, 32);
@@ -56,7 +54,7 @@ wifi_handle_event_cb(System_Event_t *evt) {
 		os_printf("\n");
 
 		// TODO:
-		//tcp_client_init(HOST, PORT);
+//		http_client_init(HOST, PORT);
 
 		break;
 	case EVENT_SOFTAPMODE_STACONNECTED:
