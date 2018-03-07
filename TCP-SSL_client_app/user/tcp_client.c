@@ -1,8 +1,5 @@
 /*
  * tcp_client.c
- *
- *  Created on: 2017��7��3��
- *      Author: Administrator
  */
 
 #include "ets_sys.h"
@@ -13,13 +10,7 @@
 #include "espconn.h"
 
 #include "tcp_client.h"
-
-#define SSL_CLIENT_ENABLE		1
-
-#if SSL_CLIENT_ENABLE
-#define SSL_CLIENT_KEY_ADDR		0x9A
-#define SSL_CA_ADDR				0x9B
-#endif
+#include "user_config.h"
 
 #define TCP_BUF_LEN		512
 static u8 tcp_rev_buff[TCP_BUF_LEN];
@@ -29,8 +20,7 @@ static struct espconn tcp_client_conn;
 struct espconn *ptcp_conn = &tcp_client_conn;
 
 /*
- * ������tcp_client_send_cb
- * ˵����TCP�ͻ��˷��ͻص�����
+ * function: tcp_client_send_cb
  */
 static void ICACHE_FLASH_ATTR
 tcp_client_send_cb(void *arg) {
@@ -38,8 +28,7 @@ tcp_client_send_cb(void *arg) {
 }
 
 /*
- * ������tcp_client_discon_cb
- * ˵����TCP�ͻ��˶Ͽ����ӻص�����
+ * function:tcp_client_discon_cb
  */
 static void ICACHE_FLASH_ATTR
 tcp_client_discon_cb(void *arg) {
@@ -47,8 +36,7 @@ tcp_client_discon_cb(void *arg) {
 }
 
 /*
- * ������tcp_client_recv
- * ˵����TCP�ͻ��˽��ջص�����
+ * function: tcp_client_recv
  */
 static void ICACHE_FLASH_ATTR
 tcp_client_recv(void *arg, char *pdata, unsigned short len) {
@@ -102,7 +90,7 @@ tcp_client_connect_cb(void *arg) {
 /*
  * function: tcp_client_init
  * parameter: u8* ip - server ip
- *			  u16 port - server port
+ *            u16 port - server port
  */
 void ICACHE_FLASH_ATTR
 tcp_client_init(u8* ip, u16 port) {

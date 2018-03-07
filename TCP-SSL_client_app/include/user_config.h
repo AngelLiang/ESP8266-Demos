@@ -31,5 +31,19 @@
 #define AP_CACHE_NUMBER    5
 #endif
 
+#define WIFI_SSID 		"WIFI_SSID"
+#define WIFI_PASSWORD	"WIFI_PASSWORD"
+
+#define HOST	"192.168.10.168"
+#define PORT	2000
+
+// 是否使用SSL
+#define SSL_CLIENT_ENABLE		0
+
+#if SSL_CLIENT_ENABLE
+#define SSL_CLIENT_KEY_ADDR		0x9A
+#define SSL_CA_ADDR				0x9B
+#endif
+
 #endif
 

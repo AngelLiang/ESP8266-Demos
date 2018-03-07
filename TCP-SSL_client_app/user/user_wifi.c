@@ -1,8 +1,5 @@
 /*
  * user_wifi.c
- *
- *  Created on: 2017��7��4��
- *      Author: Administrator
  */
 
 #include "driver/uart.h"
@@ -11,12 +8,7 @@
 #include "user_interface.h"
 
 #include "tcp_client.h"
-
-#define WIFI_SSID 		"your ssid"
-#define WIFI_PASSWORD	"your password"
-
-#define HOST	"192.168.10.70"
-#define PORT	2000
+#include "user_config.h"
 
 /*
  * function: user_set_station_config
