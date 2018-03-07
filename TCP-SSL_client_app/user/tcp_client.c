@@ -1,10 +1,9 @@
 /*
  * tcp_client.c
  *
- *  Created on: 2017Äê7ÔÂ3ÈÕ
+ *  Created on: 2017ï¿½ï¿½7ï¿½ï¿½3ï¿½ï¿½
  *      Author: Administrator
  */
-
 
 #include "ets_sys.h"
 #include "os_type.h"
@@ -15,54 +14,48 @@
 
 #include "tcp_client.h"
 
-
 #define SSL_CLIENT_ENABLE		1
 
-
 #if SSL_CLIENT_ENABLE
-	#define SSL_CLIENT_KEY_ADDR		0x9A
-	#define SSL_CA_ADDR				0x9B
+#define SSL_CLIENT_KEY_ADDR		0x9A
+#define SSL_CA_ADDR				0x9B
 #endif
 
 #define TCP_BUF_LEN		512
 static u8 tcp_rev_buff[TCP_BUF_LEN];
 static u16 rev_data_len;
 
-
 static struct espconn tcp_client_conn;
 struct espconn *ptcp_conn = &tcp_client_conn;
 
 /*
- * º¯Êý£ºtcp_client_send_cb
- * ËµÃ÷£ºTCP¿Í»§¶Ë·¢ËÍ»Øµ÷º¯Êý
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tcp_client_send_cb
+ * Ëµï¿½ï¿½ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë·ï¿½ï¿½Í»Øµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 static void ICACHE_FLASH_ATTR
-tcp_client_send_cb(void *arg)
-{
+tcp_client_send_cb(void *arg) {
 	os_printf("tcp_client_send_cb\n");
 }
 
 /*
- * º¯Êý£ºtcp_client_discon_cb
- * ËµÃ÷£ºTCP¿Í»§¶Ë¶Ï¿ªÁ¬½Ó»Øµ÷º¯Êý
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tcp_client_discon_cb
+ * Ëµï¿½ï¿½ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë¶Ï¿ï¿½ï¿½ï¿½ï¿½Ó»Øµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 static void ICACHE_FLASH_ATTR
-tcp_client_discon_cb(void *arg)
-{
+tcp_client_discon_cb(void *arg) {
 	os_printf("tcp_client_discon_cb\n");
 }
 
 /*
- * º¯Êý£ºtcp_client_recv
- * ËµÃ÷£ºTCP¿Í»§¶Ë½ÓÊÕ»Øµ÷º¯Êý
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tcp_client_recv
+ * Ëµï¿½ï¿½ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë½ï¿½ï¿½Õ»Øµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 static void ICACHE_FLASH_ATTR
-tcp_client_recv(void *arg, char *pdata, unsigned short len)
-{
+tcp_client_recv(void *arg, char *pdata, unsigned short len) {
 	os_printf("tcp_client_recv\n");
 
-	os_printf("lenth:%d\r\n",len);
-	os_printf("data:%s\r\n",pdata);
+	os_printf("lenth:%d\r\n", len);
+	os_printf("data:%s\r\n", pdata);
 
 	// TODO:
 #if 0
@@ -74,79 +67,72 @@ tcp_client_recv(void *arg, char *pdata, unsigned short len)
 }
 
 /*
- * º¯Êý£ºtcp_client_recon_cb
- * ËµÃ÷£ºTCP¿Í»§¶ËÖØÁ¬»Øµ÷º¯Êý
+ * function: tcp_client_recon_cb
  */
 static void ICACHE_FLASH_ATTR
-tcp_client_recon_cb(void *arg)
-{
-    struct espconn *pesp_conn = arg;
+tcp_client_recon_cb(void *arg) {
+	struct espconn *pesp_conn = arg;
 
-    os_printf("tcp_client_recon_cb\r\n");
+	os_printf("tcp_client_recon_cb\r\n");
 }
 
 /*
- * º¯Êý£ºtcp_client_connect_cb
- * ËµÃ÷£ºTCP¿Í»§¶ËÁ¬½Ó³É¹¦»Øµ÷º¯Êý
+ * function: tcp_client_connect_cb
  */
 static void ICACHE_FLASH_ATTR
-tcp_client_connect_cb(void *arg)
-{
-    struct espconn *pesp_conn = arg;
+tcp_client_connect_cb(void *arg) {
+	struct espconn *pesp_conn = arg;
 
-    espconn_regist_disconcb(pesp_conn, tcp_client_discon_cb);	//×¢²áTCP¿Í»§¶Ë¶Ï¿ª»Øµ÷º¯Êý
-    espconn_regist_recvcb(pesp_conn, tcp_client_recv);			//×¢²áTCP¿Í»§¶Ë½ÓÊÕ»Øµ÷º¯Êý
-    espconn_regist_sentcb(pesp_conn, tcp_client_send_cb); 		//×¢²áTCP¿Í»§¶Ë·¢ËÍ»Øµ÷º¯Êý
-    //espconn_regist_reconcb(pesp_conn, tcp_client_recon_cb);
+	espconn_regist_disconcb(pesp_conn, tcp_client_discon_cb); //×¢ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë¶Ï¿ï¿½ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
+	espconn_regist_recvcb(pesp_conn, tcp_client_recv);	//×¢ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë½ï¿½ï¿½Õ»Øµï¿½ï¿½ï¿½ï¿½ï¿½
+	espconn_regist_sentcb(pesp_conn, tcp_client_send_cb); //×¢ï¿½ï¿½TCPï¿½Í»ï¿½ï¿½Ë·ï¿½ï¿½Í»Øµï¿½ï¿½ï¿½ï¿½ï¿½
+	//espconn_regist_reconcb(pesp_conn, tcp_client_recon_cb);
 
-    os_printf("tcp_client_connect_cb\r\n");
+	os_printf("tcp_client_connect_cb\r\n");
 
-    u8 *hello = "Hello World!";
+	u8 *hello = "Hello World!";
 
 #if SSL_CLIENT_ENABLE
-    espconn_secure_send(pesp_conn, hello, os_strlen(hello));
+	espconn_secure_send(pesp_conn, hello, os_strlen(hello));
 #else
-    espconn_send(pesp_conn, hello, os_strlen(hello));
+	espconn_send(pesp_conn, hello, os_strlen(hello));
 #endif
 }
 
 /*
- * º¯Êý£ºtcp_client_init
- * ²ÎÊý£ºu8* ip - ·þÎñÆ÷Ö÷»ú
- * 	   u16 port - ·þÎñÆ÷¶Ë¿Ú
- * ËµÃ÷£ºTCP¿Í»§¶ËÁ¬½Ó³É¹¦»Øµ÷º¯Êý
+ * function: tcp_client_init
+ * parameter: u8* ip - server ip
+ *			  u16 port - server port
  */
 void ICACHE_FLASH_ATTR
-tcp_client_init(u8* ip, u16 port)
-{
+tcp_client_init(u8* ip, u16 port) {
 	static esp_tcp esptcp;
-    u32 u32_ip = ipaddr_addr(ip);
-    s8 rc = 0;
+	u32 u32_ip = ipaddr_addr(ip);
+	s8 rc = 0;
 
-    os_printf("tcp_client_init\n");
+	os_printf("tcp_client_init\n");
 
-    tcp_client_conn.type = ESPCONN_TCP;
-    tcp_client_conn.state = ESPCONN_NONE;
-    tcp_client_conn.proto.tcp = &esptcp;
+	tcp_client_conn.type = ESPCONN_TCP;
+	tcp_client_conn.state = ESPCONN_NONE;
+	tcp_client_conn.proto.tcp = &esptcp;
 
-    os_memcpy(tcp_client_conn.proto.tcp->remote_ip, &u32_ip, 4);	//ÉèÖÃ·þÎñÆ÷IP
-    tcp_client_conn.proto.tcp->remote_port = port;				//ÉèÖÃ·þÎñÆ÷PORT
+	os_memcpy(tcp_client_conn.proto.tcp->remote_ip, &u32_ip, 4);//set server ip
+	tcp_client_conn.proto.tcp->remote_port = port;			//set server port
 
-    tcp_client_conn.proto.tcp->local_port = espconn_port();
+	tcp_client_conn.proto.tcp->local_port = espconn_port();
 
-    espconn_regist_connectcb(&tcp_client_conn, tcp_client_connect_cb);
-
+	espconn_regist_connectcb(&tcp_client_conn, tcp_client_connect_cb);
 
 #if SSL_CLIENT_ENABLE
-    //espconn_secure_ca_enable(0x01, SSL_CA_ADDR);
-    espconn_secure_cert_req_enable(0x01, SSL_CLIENT_KEY_ADDR);
-    rc = espconn_secure_connect(&tcp_client_conn);
+	//espconn_secure_ca_enable(0x01, SSL_CA_ADDR);
+	espconn_secure_cert_req_enable(0x01, SSL_CLIENT_KEY_ADDR);
+	rc = espconn_secure_connect(&tcp_client_conn);
 #else
-    rc = espconn_connect(&tcp_client_conn);
+	rc = espconn_connect(&tcp_client_conn);
 #endif
 
-    os_printf("connect to "IPSTR":%d rc=%d\r\n",
-    		IP2STR(tcp_client_conn.proto.tcp->remote_ip),
+	os_printf("connect to "IPSTR":%d rc=%d\r\n",
+			IP2STR(tcp_client_conn.proto.tcp->remote_ip),
 			tcp_client_conn.proto.tcp->remote_port, rc);
 
 }
