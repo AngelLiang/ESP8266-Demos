@@ -9,6 +9,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | cJSON_app | 使用cJSON示例 |
 | esp-now_app | ESP-NOW使用示例，分为slave和controller两部分 |
 | GPIO_app | 定时设置GPIO和GPIO的中断处理函数 |
+| HTTP_client_app | ESP8266作为HTTP client示例 |
 | IIC_app | IIC使用示例 |
 | ir_app | IR接口示例 |
 | lwip_open_src_template_proj | 官网提供的lwip示例工程，添加了一些个人示例代码 |
