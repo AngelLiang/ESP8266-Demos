@@ -1,7 +1,7 @@
 /*
  * user_wifi.h
  *
- *  Created on: 2017Äê7ÔÂ4ÈÕ
+ *  Created on: 2017ï¿½ï¿½7ï¿½ï¿½4ï¿½ï¿½
  *      Author: Administrator
  */
 
@@ -10,6 +10,5 @@
 
 extern void user_set_station_config(u8* ssid, u8* password);
 extern void user_wifi_init(void);
-
 
 #endif /* _USER_WIFI_H_ */
