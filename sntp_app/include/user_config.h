@@ -31,6 +31,8 @@
 #define AP_CACHE_NUMBER    5
 #endif
 
+#define WIFI_SSID 		"WIFI_SSID"
+#define WIFI_PASSWORD	"WIFI_PASSWORD"
 
 #endif
 
