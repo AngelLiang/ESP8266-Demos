@@ -6,16 +6,16 @@ ESP8266远程更新固件示例。
 
 ## 代码配置
 
-`user_config.h`中可能需要修改的宏定义：
+`include/user_config.h`中可能需要修改的宏定义：
 
 ```C
 // user_config.h
 // ...
-#define WIFI_SSID 		"WIFI_SSID"
-#define WIFI_PASSWORD	"WIFI_PASSWORD"
+#define WIFI_SSID     "WIFI_SSID"
+#define WIFI_PASSWORD "WIFI_PASSWORD"
 
-#define HOST	"192.168.0.50"
-#define PORT	5000
+#define HOST  "192.168.0.50"
+#define PORT  5000
 ```
 
 
@@ -52,6 +52,7 @@ user1.4096.new.4.bin--->0x01000
 ```
 
 修改为 APP?=2 ，生成user2.bin：
+
 ```
 ...
 Support boot_v1.2 and +
@@ -78,14 +79,14 @@ user2.4096.new.4.bin--->0x81000
 
 Python3需要安装flask和flask_admin
 
-```
+```sh
 pip3 install flask
 pip3 install flask_admin
 ```
 
 然后运行`file_server.py`：
 
-```
+```sh
 python3 file_server.py
 ```
 
