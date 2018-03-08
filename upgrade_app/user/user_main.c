@@ -81,6 +81,7 @@ void ICACHE_FLASH_ATTR
 print_chip_info(void) {
 	u8 macAddr[6] = { 0 };
 	os_printf("\n*********************************\r\n");
+	os_printf("user bin:%d\r\n", system_upgrade_userbin_check());
 	os_printf("SDK version:%s\r\n", system_get_sdk_version());
 	os_printf("chip ID:%d\r\n", system_get_chip_id());
 	os_printf("CPU freq:%d\r\n", system_get_cpu_freq());
@@ -90,6 +91,7 @@ print_chip_info(void) {
 	} else {
 		os_printf("Get MAC fail!\r\n");
 	}
+
 	os_printf("meminfo:\r\n");
 	system_print_meminfo();
 	os_printf("*********************************\r\n");
@@ -121,8 +123,9 @@ init_done_cb_init(void) {
 void ICACHE_FLASH_ATTR
 user_init(void) {
 	uart_init(76800, 76800);
-	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
+//	uart_init(BIT_RATE_115200, BIT_RATE_115200);
 	os_printf("SDK version:%s\n", system_get_sdk_version());
+//	os_printf("user bin:%d\r\n", system_upgrade_userbin_check());
 	system_init_done_cb(init_done_cb_init);
 }
 

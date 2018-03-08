@@ -282,8 +282,12 @@ uart_test_rx() {
 	tx_buff_enq(uart_buf, len);
 
 	// TODO:
-	if (0 == os_strncmp(uart_buf, "request", 7)) {
+	if (0 == os_strncmp(uart_buf, "request", os_strlen("request"))) {
 		http_client_connect();
+	} else if (0 == os_strncmp(uart_buf, "init", os_strlen("init"))) {
+		user_upgrade_init();
+	} else if (0 == os_strncmp(uart_buf, "finish", os_strlen("finish"))) {
+		user_upgrade_finish();
 	}
 
 }
@@ -336,14 +340,14 @@ uart_init(UartBautRate uart0_br, UartBautRate uart1_br) {
 #endif
 
 	/*option 1: use default print, output from uart0 , will wait some time if fifo is full */
-	//do nothing...
+//do nothing...
 	/*option 2: output from uart1,uart1 output will not wait , just for output debug info */
 	/*os_printf output uart data via uart1(GPIO2)*/
-	//os_install_putc1((void *)uart1_write_char);    //use this one to output debug information via uart1 //
+//os_install_putc1((void *)uart1_write_char);    //use this one to output debug information via uart1 //
 	/*option 3: output from uart0 will skip current byte if fifo is full now... */
 	/*see uart0_write_char_no_wait:you can output via a buffer or output directly */
 	/*os_printf output uart data via uart0 or uart buffer*/
-	//os_install_putc1((void *)uart0_write_char_no_wait);  //use this to print via uart0
+//os_install_putc1((void *)uart0_write_char_no_wait);  //use this to print via uart0
 #if UART_SELFTEST&UART_BUFF_EN
 	os_timer_disarm(&buff_timer_t);
 	os_timer_setfn(&buff_timer_t, uart_test_rx, NULL); //a demo to process the data in uart rx buffer
@@ -590,7 +594,7 @@ void tx_start_uart_buffer(uint8 uart_no) {
 	uint8 fifo_remain = UART_FIFO_LEN - tx_fifo_len;
 	uint8 len_tmp;
 	uint16 tail_ptx_len, head_ptx_len, data_len;
-	//struct UartBuffer* pTxBuff = *get_buff_prt();
+//struct UartBuffer* pTxBuff = *get_buff_prt();
 
 	if (pTxBuffer) {
 		data_len = (pTxBuffer->UartBuffSize - pTxBuffer->Space);
@@ -760,7 +764,7 @@ UART_SetPrintPort(uint8 uart_no) {
 /*test code*/
 void ICACHE_FLASH_ATTR
 uart_init_2(UartBautRate uart0_br, UartBautRate uart1_br) {
-	// rom use 74880 baut_rate, here reinitialize
+// rom use 74880 baut_rate, here reinitialize
 	UartDev.baut_rate = uart0_br;
 	UartDev.exist_parity = STICK_PARITY_EN;
 	UartDev.parity = EVEN_BITS;
@@ -772,7 +776,7 @@ uart_init_2(UartBautRate uart0_br, UartBautRate uart1_br) {
 	uart_config(UART1);
 	ETS_UART_INTR_ENABLE();
 
-	// install uart1 putc callback
+// install uart1 putc callback
 	os_install_putc1((void *) uart1_write_char); //print output at UART1
 }
 
