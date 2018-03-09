@@ -273,6 +273,7 @@ LOCAL void uart0_rx_intr_handler(void *para) {
 #if UART_SELFTEST&UART_BUFF_EN
 #include "http_client.h"
 #include "user_config.h"
+extern void print_chip_info(void);
 os_timer_t buff_timer_t;
 void ICACHE_FLASH_ATTR
 uart_test_rx() {
@@ -282,12 +283,12 @@ uart_test_rx() {
 	tx_buff_enq(uart_buf, len);
 
 	// TODO:
-	if (0 == os_strncmp(uart_buf, "request", os_strlen("request"))) {
+	if (0 == os_strncmp(uart_buf, "download", os_strlen("download"))) {
 		http_client_connect();
-	} else if (0 == os_strncmp(uart_buf, "init", os_strlen("init"))) {
-		user_upgrade_init();
 	} else if (0 == os_strncmp(uart_buf, "finish", os_strlen("finish"))) {
 		user_upgrade_finish();
+	} else if (0 == os_strncmp(uart_buf, "info", os_strlen("info"))) {
+		print_chip_info();
 	}
 
 }

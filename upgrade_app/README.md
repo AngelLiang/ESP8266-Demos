@@ -18,8 +18,6 @@ ESP8266远程更新固件示例。
 #define PORT  5000
 ```
 
-
-
 ## 生成user1.bin和user2.bin
 
 可以使用`gen_misc.bat/sh`脚本生成，或者修改Makefile脚本后直接编译。
@@ -51,7 +49,7 @@ boot.bin------------>0x00000
 user1.4096.new.4.bin--->0x01000
 ```
 
-修改为 APP?=2 ，生成user2.bin：
+修改为 APP?=2 ，**先clean**，然后生成user2.bin：
 
 ```
 ...
@@ -60,6 +58,9 @@ Generate user2.4096.new.4.bin successully in folder bin/upgrade.
 boot.bin------------>0x00000
 user2.4096.new.4.bin--->0x81000
 ```
+
+> 注意事项：
+> 每次编译都要clean一下！否则会出现调用Flash函数时卡住的现象！
 
 ## 烧写
 
@@ -96,9 +97,9 @@ python3 file_server.py
 
 ## 升级操作
 
-打开串口连接ESP8266，波特率74880bps或76800bps。
+使用串口工具连接ESP8266，波特率选择76800bps。
 
-当连接上Wi-Fi获取到IP地址后，发送`request`即请求文件服务器，进行固件升级。
+当连接上Wi-Fi获取到IP地址后，发送`download`即请求文件服务器，进行固件升级。
 
 当串口停止打印并输出下面信息之后：
 
@@ -108,9 +109,9 @@ http_body_handle finish!
 tcp_client_discon_cb
 ```
 
-发送`finish`使用新的固件进行重启：
+发送`finish`使用新的固件进行重启。
 
-可以找到下面信息证明使用了新的固件：
+重启后可以找到下面信息证明使用了新的固件：
 
 `use1.bin`@0x01000：
 
@@ -137,3 +138,4 @@ SDK version:2.0.0(656edbf)
 *********************************
 ```
 
+或者发送`info`查看信息。

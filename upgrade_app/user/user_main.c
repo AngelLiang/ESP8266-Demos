@@ -83,9 +83,10 @@ print_chip_info(void) {
 	os_printf("\n*********************************\r\n");
 	os_printf("user bin:%d\r\n", system_upgrade_userbin_check());
 	os_printf("SDK version:%s\r\n", system_get_sdk_version());
-	os_printf("chip ID:%d\r\n", system_get_chip_id());
+	os_printf("Build Datetime:%s %s\r\n", __DATE__, __TIME__);
+	os_printf("Chip ID:%d\r\n", system_get_chip_id());
 	os_printf("CPU freq:%d\r\n", system_get_cpu_freq());
-	os_printf("free heap size:%d\r\n", system_get_free_heap_size());
+	os_printf("Free heap size:%d\r\n", system_get_free_heap_size());
 	if (wifi_get_macaddr(STATION_IF, macAddr)) {
 		os_printf("MAC:"MACSTR"\r\n", MAC2STR(macAddr));
 	} else {

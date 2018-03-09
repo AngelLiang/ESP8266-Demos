@@ -1,11 +1,5 @@
 // ringbuf.c
 
-#include "ets_sys.h"
-#include "os_type.h"
-#include "osapi.h"
-#include "mem.h"
-#include "user_interface.h"
-#include "espconn.h"
 #include "ringbuf.h"
 
 /*
@@ -15,8 +9,10 @@
  * \param size size of buf
  * \return 1 if successfull, otherwise failed
  */
-int16_t ICACHE_FLASH_ATTR
-RINGBUF_Init(RINGBUF *r, uint8_t* buf, int32_t size) {
+#if defined(_ESP8266)
+ICACHE_FLASH_ATTR
+#endif
+int16_t RINGBUF_Init(RINGBUF *r, uint8_t* buf, int32_t size) {
 	if (r == NULL || buf == NULL || size < 2) {
 		return 0;                   // 如果r和buf传入的参数为空、size数组大小小于2，则初始化失败
 	}
@@ -31,8 +27,10 @@ RINGBUF_Init(RINGBUF *r, uint8_t* buf, int32_t size) {
  * \param c character to be put
  * \return 1 if successfull, otherwise failed
  */
-int16_t ICACHE_FLASH_ATTR
-RINGBUF_Put(RINGBUF *r, uint8_t c) {
+#if defined(_ESP8266)
+ICACHE_FLASH_ATTR
+#endif
+int16_t RINGBUF_Put(RINGBUF *r, uint8_t c) {
 	if (r->fill_cnt >= r->size) {
 		os_printf("RINGBUF FULL\n");
 		return 0;                  // 如果缓冲区满了，则返回0错误
@@ -50,8 +48,10 @@ RINGBUF_Put(RINGBUF *r, uint8_t c) {
  * \param c read character
  * \return 1 if successfull, otherwise failed
  */
-int16_t ICACHE_FLASH_ATTR
-RINGBUF_Get(RINGBUF *r, uint8_t* c, int32_t length) {
+#if defined(_ESP8266)
+ICACHE_FLASH_ATTR
+#endif
+int16_t RINGBUF_Get(RINGBUF *r, uint8_t* c, int32_t length) {
 	int32_t cnt = 0;
 	int i;
 
@@ -73,16 +73,26 @@ RINGBUF_Get(RINGBUF *r, uint8_t* c, int32_t length) {
 	return 1;
 }
 
-int ICACHE_FLASH_ATTR
-RINGBUF_IsFull(RINGBUF *r) {
+/*
+ * function: RINGBUF_IsFull
+ */
+#if defined(_ESP8266)
+ICACHE_FLASH_ATTR
+#endif
+int RINGBUF_IsFull(RINGBUF *r) {
 	if (r->fill_cnt >= r->size) {
 		return 1;
 	}
 	return 0;
 }
 
-int32_t ICACHE_FLASH_ATTR
-RINGBUF_DataSize(RINGBUF *r) {
+/*
+ * function: RINGBUF_Use
+ */
+#if defined(_ESP8266)
+ICACHE_FLASH_ATTR
+#endif
+int32_t RINGBUF_Use(RINGBUF *r) {
 	return r->fill_cnt;
 }
 

@@ -34,7 +34,7 @@
 #define WIFI_SSID 		"WIFI_SSID"
 #define WIFI_PASSWORD	"WIFI_PASSWORD"
 
-#define HOST	"192.168.0.50"
+#define HOST	"192.168.10.168"
 #define PORT	5000
 
 #define FILE_URL "/admin/fileadmin/download/user1.4096.new.4.bin"

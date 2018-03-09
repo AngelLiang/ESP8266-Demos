@@ -52,8 +52,13 @@ static u32 g_tcp_pack_count = 0;	// 计算TCP包的个数
  */
 static void ICACHE_FLASH_ATTR
 tcp_client_send_cb(void *arg) {
+	struct espconn *pesp_conn = arg;
 	debug("tcp_client_send_cb\n");
+
+	RINGBUF_Init(pRingBuf, rbuf, RBUF_SIZE);
+	http_body_size = 0;
 	g_tcp_pack_count = 0;
+	system_upgrade_flag_set(UPGRADE_FLAG_START);
 }
 
 /*
@@ -61,6 +66,7 @@ tcp_client_send_cb(void *arg) {
  */
 static void ICACHE_FLASH_ATTR
 tcp_client_discon_cb(void *arg) {
+	struct espconn *pesp_conn = arg;
 	debug("tcp_client_discon_cb\n");
 }
 
@@ -81,17 +87,39 @@ tcp_client_recon_cb(void *arg) {
  *            u32 *pdata - data
  *            u32 size - size
  */
-static void ICACHE_FLASH_ATTR
-write_flash_data(u32 addr, u32 *pdata, u32 size) {
+//static void ICACHE_FLASH_ATTR
+static void write_flash_data(u32 addr, u32 *pdata, u32 size) {
 	SpiFlashOpResult ret_spi;
-//	debug("write_flash_data\r\n");
-	ret_spi = spi_flash_erase_sector(addr);
-	if (SPI_FLASH_RESULT_OK == ret_spi) {
+	debug("write_flash_data@%d\r\n", addr);
+	ret_spi = spi_flash_erase_sector(addr);	// 这个位置如果会卡住！！！是因为编译前没有clean
+	switch (ret_spi) {
+	case SPI_FLASH_RESULT_OK:
 		debug("flash earse@%d\r\n", addr);
+		break;
+	case SPI_FLASH_RESULT_ERR:
+		debug("flash earse error@%d\r\n", addr);
+		break;
+	case SPI_FLASH_RESULT_TIMEOUT:
+		debug("flash earse timeout@%d\r\n", addr);
+		break;
+	default:
+		debug("flash error@%d\r\n", addr);
+		break;
 	}
 	ret_spi = spi_flash_write(addr * 4096, pdata, size);
-	if (SPI_FLASH_RESULT_OK == ret_spi) {
+	switch (ret_spi) {
+	case SPI_FLASH_RESULT_OK:
 		debug("flash write@%d\r\n", addr);
+		break;
+	case SPI_FLASH_RESULT_ERR:
+		debug("flash write error@%d\r\n", addr);
+		break;
+	case SPI_FLASH_RESULT_TIMEOUT:
+		debug("flash write timeout@%d\r\n", addr);
+		break;
+	default:
+		debug("flash error@%d\r\n", addr);
+		break;
 	}
 }
 
@@ -99,23 +127,24 @@ static int ICACHE_FLASH_ATTR
 http_body_handle(const char *pdata, u32 len) {
 	int ret = 0;
 
-	debug("http_body_handle\r\n");
+//	debug("http_body_handle\r\n");
 	if (NULL == pdata) {
 		return 0;
 	}
 
-	// 使用RINGBUF进行数据缓存
+// 使用RINGBUF进行数据缓存
 	int i;
-
 	for (i = 0; i < len; i++) {
 		RINGBUF_Put(pRingBuf, pdata[i]);
 
 		// 达到4096字节后就写入flash
-		s32 dSize = RINGBUF_DataSize(pRingBuf);
+		s32 dSize = RINGBUF_Use(pRingBuf);
+//		debug("dSize=%d\r\n", dSize);
 		if (4096 == dSize) {
 //			debug("dSize=%d\r\n", dSize);
-#if 1
+#if 0
 			RINGBUF_Get(pRingBuf, wbuf, dSize);
+//			debug("get finish!\r\n");
 			write_flash_data(wAddr, (u32*) wbuf, dSize);
 #else
 			// 直接使用ringbuf数组
@@ -127,9 +156,9 @@ http_body_handle(const char *pdata, u32 len) {
 	}
 
 	if (http_body_size == 0) {
-		u32 remainSize = RINGBUF_DataSize(pRingBuf);
+		u32 remainSize = RINGBUF_Use(pRingBuf);
 		u8 exadd = 4 - (remainSize % 4);	// 4字节对齐：计算离4的倍数字节还差多少字节
-#if 1
+#if 0
 		RINGBUF_Get(pRingBuf, wbuf, remainSize);
 		write_flash_data(wAddr, (u32*) wbuf, remainSize + exadd);
 #else
@@ -156,7 +185,7 @@ tcp_client_recv(void *arg, char *pdata, unsigned short len) {
 
 	char *pBody = NULL;
 	u32 header_len = 0;
-	// 获取http body size
+// 获取http body size
 	if (http_body_size == 0) {
 		header_len = get_http_body(pdata, &pBody);
 		debug("header_len:%d\r\n", header_len);
@@ -166,7 +195,7 @@ tcp_client_recv(void *arg, char *pdata, unsigned short len) {
 		pBody = pdata;
 	}
 
-	// 如果HTTP Body还没有接受完
+// 如果HTTP Body还没有接受完
 	if (http_body_size > 0) {
 		debug("http_body_size:%d\r\n", http_body_size);
 		// TODO:
@@ -188,35 +217,26 @@ tcp_client_connect_cb(void *arg) {
 
 	debug("tcp_client_connect_cb\r\n");
 
-	// 注册各种事件回调函数
+// 注册各种事件回调函数
 	espconn_regist_disconcb(pesp_conn, tcp_client_discon_cb);
 	espconn_regist_recvcb(pesp_conn, tcp_client_recv);
 	espconn_regist_sentcb(pesp_conn, tcp_client_send_cb);
 //espconn_regist_reconcb(pesp_conn, tcp_client_recon_cb);
 
-	//TODO:
-
-	// 选择需要烧写的地址
-	if (1 == system_upgrade_userbin_check()) {
-		wAddr = USER1_BIN_FLASH_SECTOR;
-	} else {
-		wAddr = USER2_BIN_FLASH_SECTOR;
-	}
-
-	RINGBUF_Init(pRingBuf, rbuf, RBUF_SIZE);
-	http_body_size = 0;
-	g_tcp_pack_count = 0;
-
-	// 发送请求
+//TODO:
+// 发送请求
 #if SSL_CLIENT_ENABLE
 	espconn_secure_send(pesp_conn, hello, os_strlen(hello));
 #else
 //espconn_send(pesp_conn, hello, os_strlen(hello));
 	if (1 == system_upgrade_userbin_check()) {
+		wAddr = USER1_BIN_FLASH_SECTOR;	// 选择需要烧写的地址
 		espconn_send(pesp_conn, HTTP_REQUEST, os_strlen(HTTP_REQUEST));
 	} else {
+		wAddr = USER2_BIN_FLASH_SECTOR;	// 选择需要烧写的地址
 		espconn_send(pesp_conn, HTTP_REQUEST2, os_strlen(HTTP_REQUEST2));
 	}
+
 #endif
 }
 
