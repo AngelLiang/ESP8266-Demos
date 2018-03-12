@@ -6,6 +6,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 |---|---|
 | ADC_app| 定时读取ADC数值 |
 | CoAP_app | 搭建一个简单的CoAP Server |
+| empty_app | 空白工程 |
 | cJSON_app | 使用cJSON示例 |
 | esp-now_app | ESP-NOW使用示例，分为slave和controller两部分 |
 | GPIO_app | 定时设置GPIO和GPIO的中断处理函数 |
@@ -18,7 +19,6 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | sniffer_app | sniffer使用示例 |
 | SNTP_app | SNTP使用示例工程 |
 | SPI_app | SPI使用示例，支持HARD_SPI和SOFT_SPI |
-| todo_app | 空白工程 |
 | TCP-UDP_server_app | TCP和UDP服务器示例 |
 | base64_encode_app | base64编码示例 |
 | TCP-SSL_client_app | TCP和SSL客户端示例 |
