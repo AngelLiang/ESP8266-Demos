@@ -20,6 +20,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | SmartConfig-WiFi_app | 上电先SmartConfig，一段时间后WiFi连接 |
 | sniffer_app | sniffer使用示例 |
 | SNTP_app | SNTP使用示例工程 |
+| speed_test_app | ESP8266 TCP/UDP速率测试 |
 | SPI_app | SPI使用示例，支持HARD_SPI和SOFT_SPI |
 | TCP-UDP_server_app | TCP和UDP服务器示例 |
 | base64_app | base64编码示例 |
