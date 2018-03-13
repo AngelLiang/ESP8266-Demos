@@ -11,6 +11,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | esp-now_app | ESP-NOW使用示例，分为slave和controller两部分 |
 | GPIO_app | 定时设置GPIO和GPIO的中断处理函数 |
 | HTTP_client_app | ESP8266作为HTTP client示例 |
+| hw_timer_app | ESP8266使用硬件中断定时器示例 |
 | IIC_app | IIC使用示例 |
 | ir_app | IR接口示例 |
 | lwip_open_src_template_proj | 官网提供的lwip示例工程，添加了一些个人示例代码 |
