@@ -1,14 +1,14 @@
 # SPI_app
 
-本工程有以下内容，可以在user_config.h根据宏定义来编译
+本工程有以下内容，可以在`user_config.h`根据宏定义来编译
 
 | 宏定义 | 说明 |
 |---|---|
 | SPI_TEST | 官方SPI测试用例 |
-| OLED | 基于SOFT_SPI的OLED示例 |
-| TM7705 | 基于SOFT_SPI TM7705 ADC模块的读取 |
+| OLED | 基于SOFT_SPI控制OLED示例 |
+| TM7705 | 基于SOFT_SPI读取TM7705 ADC模块示例 |
 
-```
+```C
 #define SPI_TEST
 //#define OLED
 //#define TM7705
@@ -41,6 +41,8 @@ D8 | HSPI_CS
 
 ## OLED
 
+基于软件模拟SPI（SOFT_SPI）的OLED示例。
+
 引脚连接
 
  NodeMCU | ESP8266 | Function | OLED
@@ -55,3 +57,4 @@ D8 | HSPI_CS
 
 ## TM7705
 
+基于SOFT_SPI读取TM7705 ADC模块示例。
