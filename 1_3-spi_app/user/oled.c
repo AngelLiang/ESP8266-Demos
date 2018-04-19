@@ -63,7 +63,7 @@ oled_pin_init(void)
 
 
 /*
- * 对 OLED 写一个字节，本质是封装了 user spi接口。
+ * 对 OLED 写一个字节，本质是封装了 user spi 接口。
  * @function: oled_write_byte
  */
 static void ICACHE_FLASH_ATTR
