@@ -1,4 +1,4 @@
-# SPI_app
+# spi_app
 
 本工程有以下内容，可以在`user_config.h`根据宏定义来编译
 
@@ -160,3 +160,26 @@ oled_write_byte(u8 data)
 ## TM7705
 
 基于SOFT_SPI读取TM7705 ADC模块示例。
+
+可能需要修改的引脚宏定义：
+
+```C
+// app/user/TM7705.c
+
+// 可能需要修改下面的宏定义
+/***********************************************************/
+#define ADC1
+#define ADC2
+
+#define RESET_PIN				4
+#define PERIPHS_IO_MUX_RESET	PERIPHS_IO_MUX_GPIO4_U
+#define FUNC_RESET				FUNC_GPIO4
+
+#define DRDY_PIN				5
+#define PERIPHS_IO_MUX_DRDY		PERIPHS_IO_MUX_GPIO5_U
+#define FUNC_DRDY				FUNC_GPIO5
+
+/***********************************************************/
+```
+
+
