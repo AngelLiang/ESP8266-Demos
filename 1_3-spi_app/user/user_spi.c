@@ -1,7 +1,7 @@
 /*
  * user_spi.c
  *
- *  Created on: 2017年7月20日
+ *  Created on: 2017锟斤拷7锟斤拷20锟斤拷
  *      Author: Administrator
  */
 
@@ -23,8 +23,7 @@ user_spi_delay_us(u16 us)
 
 
 /*
- * 函数：user_spi_pin_init
- * 说明：SPI引脚初始化
+ * function: user_spi_pin_init
  */
 void ICACHE_FLASH_ATTR
 user_spi_pin_init(void)
@@ -57,14 +56,13 @@ user_spi_pin_init(void)
 #elif defined(SOFT_SPI)
     SOFT_PIN_INIT();
 #else
-	#error #error "Please define SPI Interface mode : SOFT_SPI or HARD_SPI"
+	#error "Please define SPI interface mode : SOFT_SPI or HARD_SPI"
 #endif
 
 }
 
 /*
- * 函数：user_spi_read_byte
- * 说明：SPI读取一个字节
+ * function: user_spi_read_byte
  */
 u8 ICACHE_FLASH_ATTR
 user_spi_read_byte(void)
@@ -103,8 +101,7 @@ user_spi_read_byte(void)
 }
 
 /*
- * 函数：user_spi_read_2byte
- * 说明：SPI读取2个字节
+ * function: user_spi_read_2byte
  */
 u16 ICACHE_FLASH_ATTR
 user_spi_read_2byte(void)
@@ -135,8 +132,7 @@ user_spi_read_2byte(void)
 }
 
 /*
- * 函数：user_spi_read_4byte
- * 说明：SPI读取4个字节
+ * function:user_spi_read_4byte
  */
 u32 ICACHE_FLASH_ATTR
 user_spi_read_4byte(void)
@@ -171,8 +167,7 @@ user_spi_read_4byte(void)
 }
 
 /*
- * 函数：user_spi_write_byte
- * 说明：SPI写一个字节
+ * function: user_spi_write_byte
  */
 void ICACHE_FLASH_ATTR
 user_spi_write_byte(u8 data)

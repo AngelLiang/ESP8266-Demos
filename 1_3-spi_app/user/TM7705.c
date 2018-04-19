@@ -64,7 +64,7 @@ bsp_DelayMS(u16 n)
 void ICACHE_FLASH_ATTR
 TM7705_pin_init(void)
 {
-	user_spi_pin_init();
+	user_spi_pin_init();	// 调用 user spi 接口
     TM_7705_GPIO_INIT();
 }
 
@@ -113,8 +113,11 @@ static u8 ICACHE_FLASH_ATTR
 TM7705_Recive8Bit(void)
 {
 	u8 read = 0;
+
+	// 调用 user spi 接口
 	//read = user_spi_read_byte();
 
+	// 因为 TM7705 读取可能需要延时，所以把 user_spi_read_byte() 的代码移植过来并加上延时
 #if defined(SOFT_SPI)
 	u8 i;
 	CS_0();
@@ -467,8 +470,8 @@ timer_cb(void *arg)
 }
 
 /*
- * 函数：user_ad7705_read_timer_init
- * 说明：定时读取ad7705值
+ * function: user_ad7705_read_timer_init
+ * description: 定时读取 ad7705 值
  */
 void ICACHE_FLASH_ATTR
 user_TM7705_read_timer_init(void)

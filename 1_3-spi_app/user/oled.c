@@ -42,15 +42,20 @@ static u8 init_data[] = {
 	0x20, 0x8D, 0x14, 0xAF,
 };
 
+/**********************************************************************/
+// OLED 底层接口，封装 user spi接口
+
 /*
- * 函数：oled_pin_init
- * 说明：相关引脚初始化
+ * OLED 引脚初始化，把 user spi 接口封装一下。
+ * @function: oled_pin_init
  */
 static void ICACHE_FLASH_ATTR
 oled_pin_init(void)
 {
+	// spi 初始化
 	user_spi_pin_init();
 
+	// OLED 相关引脚的初始化
 	ROM_CS_PIN_INIT();
 	DC_PIN_INIT();
 	FSO_PIN_INIT();
@@ -58,17 +63,20 @@ oled_pin_init(void)
 
 
 /*
- * 函数：oled_write_byte
- * 说明：对OLED写一个字节
+ * 对 OLED 写一个字节，本质是封装了 user spi接口。
+ * @function: oled_write_byte
  */
 static void ICACHE_FLASH_ATTR
 oled_write_byte(u8 data)
 {
+	// 调用 user spi 接口
 	user_spi_write_byte(data);
 }
 
+/**********************************************************************/
+
 /*
- * 函数：oled_write_cmd
+ * functin: oled_write_cmd
  * 说明：对OLED写指令
  */
 static void ICACHE_FLASH_ATTR
@@ -79,7 +87,7 @@ oled_write_cmd(u8 data)
 }
 
 /*
- * 函数：olcd_wirte_data
+ * functin: olcd_wirte_data
  * 说明：对OLED写数据
  */
 static void ICACHE_FLASH_ATTR
@@ -90,7 +98,7 @@ oled_wirte_data(u8 data)
 }
 
 /*
- * 函数：oled_clear_screen
+ * functin: oled_clear_screen
  * 说明：清屏
  */
 void ICACHE_FLASH_ATTR
@@ -119,7 +127,7 @@ lcd_address(u16 page, u16 column)
 }
 
 /*
- * 函数：display_graphic_8x16
+ * functin: display_graphic_8x16
  * 说明：显示8x16点阵图像、ASCII
  */
 void ICACHE_FLASH_ATTR
@@ -311,9 +319,9 @@ display_GB2312_string(u8 y,u8 x,u8 *text)
 			addrMid = (fontaddr&0xff00)>>8;
 			addrLow = fontaddr&0xff;
 
-			/*取16个字节的数据，存到"fontbuf[32]"*/
+			/* 取16个字节的数据，存到"fontbuf[32]" */
 			get_n_bytes_data_from_ROM(addrHigh, addrMid, addrLow, fontbuf, 16 );
-			/*显示8x16的ASCII字到LCD上，y为页地址，x为列地址，fontbuf[]为数据*/
+			/* 显示8x16的ASCII字到LCD上，y为页地址，x为列地址，fontbuf[]为数据 */
 			display_graphic_8x16(y, x, fontbuf);
 
 			i+=1;
@@ -327,7 +335,7 @@ display_GB2312_string(u8 y,u8 x,u8 *text)
 
 
 /*
- * 函数：oled_init
+ * function: oled_init
  * 说明：OLED总体初始化
  */
 void ICACHE_FLASH_ATTR
@@ -355,7 +363,7 @@ u8 jiong1[]={
 };
 
 /*
- * 函数：oled_test_init
+ * function: oled_test_init
  * 说明：测试例程
  */
 void ICACHE_FLASH_ATTR
