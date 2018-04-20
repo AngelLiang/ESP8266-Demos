@@ -49,6 +49,8 @@ wifi_handle_event_cb(System_Event_t *evt) {
 		os_printf("mode: %d -> %d\n", evt->event_info.auth_change.old_mode,
 				evt->event_info.auth_change.new_mode);
 		break;
+
+	// 获取到IP地址后
 	case EVENT_STAMODE_GOT_IP:
 		os_printf("ip:" IPSTR ",mask:" IPSTR ",gw:" IPSTR,
 				IP2STR(&evt->event_info.got_ip.ip),
@@ -57,7 +59,7 @@ wifi_handle_event_cb(System_Event_t *evt) {
 		os_printf("\n");
 
 		// TODO:
-		tcp_client_init(HOST, PORT);
+		tcp_client_init(HOST, PORT);	// tcp client 连接 tcp server
 
 		break;
 	case EVENT_SOFTAPMODE_STACONNECTED:

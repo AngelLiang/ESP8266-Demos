@@ -71,9 +71,9 @@ static void ICACHE_FLASH_ATTR
 tcp_client_connect_cb(void *arg) {
 	struct espconn *pesp_conn = arg;
 
-	espconn_regist_disconcb(pesp_conn, tcp_client_discon_cb); //ע��TCP�ͻ��˶Ͽ��ص�����
-	espconn_regist_recvcb(pesp_conn, tcp_client_recv);	//ע��TCP�ͻ��˽��ջص�����
-	espconn_regist_sentcb(pesp_conn, tcp_client_send_cb); //ע��TCP�ͻ��˷��ͻص�����
+	espconn_regist_disconcb(pesp_conn, tcp_client_discon_cb);
+	espconn_regist_recvcb(pesp_conn, tcp_client_recv);
+	espconn_regist_sentcb(pesp_conn, tcp_client_send_cb);
 	//espconn_regist_reconcb(pesp_conn, tcp_client_recon_cb);
 
 	os_printf("tcp_client_connect_cb\r\n");
@@ -106,7 +106,6 @@ tcp_client_init(u8* ip, u16 port) {
 
 	os_memcpy(tcp_client_conn.proto.tcp->remote_ip, &u32_ip, 4);//set server ip
 	tcp_client_conn.proto.tcp->remote_port = port;			//set server port
-
 	tcp_client_conn.proto.tcp->local_port = espconn_port();
 
 	espconn_regist_connectcb(&tcp_client_conn, tcp_client_connect_cb);
