@@ -30,11 +30,22 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 部分app文件夹下有说明文件（README.md）和效果图（screenshot）。
 
+
+
+# 作者所用的开发环境
+
+- Windows 10 x64
+- [安信可 ESP 系列一体化开发环境](http://wiki.ai-thinker.com/ai_ide_install)
+
+
+
 # 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
 2. 然后下载并拷贝相关工程文件夹（比如cJSON_app）到主目录，用法类似于ESP8266_NONOS_SDK/examples里面的工程；
-3. 最后编译下载即可。
+3. 最后编译下载即可（建议先clean）。
+
+![project_sample](screenshot/project_sample.png)
 
 # 注意事项
 
