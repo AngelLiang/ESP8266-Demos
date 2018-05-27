@@ -78,10 +78,12 @@ user_rf_cal_sector_set(void)
 }
 
 void ICACHE_FLASH_ATTR
-user_rf_pre_init(void)
-{
+user_rf_pre_init(void){
 }
 
+/*
+ * function: user_init
+ */
 void ICACHE_FLASH_ATTR
 user_init(void)
 {

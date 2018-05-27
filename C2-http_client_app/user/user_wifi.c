@@ -74,6 +74,8 @@ wifi_handle_event_cb(System_Event_t *evt) {
 
 /*
  * function: user_wifi_init
+ * parameter: void
+ * return: void
  */
 void ICACHE_FLASH_ATTR
 user_wifi_init(void) {

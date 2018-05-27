@@ -15,8 +15,8 @@
 #define GPIO_SET_INTERVAL	1000
 
 /*
- * 函数：user_gpio_interrupt
- * 说明：GPIO中断处理函数
+ * function: user_gpio_interrupt
+ * description: GPIO中断处理函数
  */
 void user_gpio_interrupt(void *arg) {
 	u32 gpio_status;
@@ -32,8 +32,8 @@ void user_gpio_interrupt(void *arg) {
 }
 
 /*
- * 函数：user_gpio_interrupt_init
- * 说明：GPIO中断处理初始化
+ * function: user_gpio_interrupt_init
+ * description: GPIO中断处理初始化
  */
 void ICACHE_FLASH_ATTR
 user_gpio_interrupt_init(void) {
@@ -65,8 +65,8 @@ user_gpio_interrupt_init(void) {
 }
 
 /*
- * 函数：gpio_timer_cb
- * 说明：定时器回调控制GPIO
+ * function: gpio_timer_cb
+ * description: 定时器回调控制GPIO
  */
 void ICACHE_FLASH_ATTR
 gpio_timer_cb(void *arg) {
@@ -76,8 +76,8 @@ gpio_timer_cb(void *arg) {
 }
 
 /*
- * 函数：user_gpio_timer_init
- * 说明：定时改变GPIO的状态
+ * function: user_gpio_timer_init
+ * description: 定时改变GPIO的状态
  */
 void ICACHE_FLASH_ATTR
 user_gpio_timer_init(void) {

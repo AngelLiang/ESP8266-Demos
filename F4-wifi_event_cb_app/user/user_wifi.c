@@ -1,8 +1,5 @@
 /*
  * user_wifi.c
- *
- *  Created on: 2017��7��4��
- *      Author: Administrator
  */
 
 #include "ets_sys.h"
@@ -18,6 +15,7 @@
  * function: user_set_station_config
  * parameter: u8* ssid - WiFi SSID
  *            u8 password - WiFi password
+ * return: void
  */
 void ICACHE_FLASH_ATTR
 user_set_station_config(u8* ssid, u8* password) {
@@ -33,6 +31,7 @@ user_set_station_config(u8* ssid, u8* password) {
 /*
  * function: wifi_handle_event_cb
  * parameter: System_Event_t *evt
+ * return: void
  */
 void ICACHE_FLASH_ATTR
 wifi_handle_event_cb(System_Event_t *evt) {
@@ -76,7 +75,8 @@ wifi_handle_event_cb(System_Event_t *evt) {
 }
 
 /*
- * function: �user_wifi_init
+ * function: user_wifi_init
+ * return: void
  */
 void ICACHE_FLASH_ATTR
 user_wifi_init(void) {
