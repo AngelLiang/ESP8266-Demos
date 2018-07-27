@@ -2,42 +2,24 @@
  * filename: md5.c
  */
 
-#define _ESP8266
-#define DEBUG
-
-#ifdef _WIN32
-#include <stdio.h>
-#include <string.h>
-#define MEMCPY	memcpy
-#define STRLEN	strlen
-#define STRNCMP strncmp
-
-#elif defined(_ESP8266)
 #include "ets_sys.h"
 #include "osapi.h"
 #include "user_interface.h"
+
 #define MEMCPY	os_memcpy
 #define STRLEN	os_strlen
 #define STRNCMP os_strncmp
 #define MEMCMP os_memcmp
 
-#endif
-
 #include "md5.h"
 
 /****************************************************************/
+#define DEBUG
+
 
 #ifdef DEBUG
-#ifdef _WIN32
-#define debug(fmt, args...) printf(fmt, ##args)
-#define debugX(level, fmt, args...) if(DEBUG>=level) printf(fmt, ##args);
-#elif defined(__linux__)
-#define debug(fmt, args...) printf(fmt, ##args)
-#define debugX(level, fmt, args...) if(DEBUG>=level) printf(fmt, ##args);
-#elif defined(_ESP8266)
 #define debug(fmt, args...) os_printf(fmt, ##args)
 #define debugX(level, fmt, args...) if(DEBUG>=level) os_printf(fmt, ##args);
-#endif
 #else
 #define debug(fmt, args...)
 #define debugX(level, fmt, args...)
@@ -49,7 +31,8 @@ unsigned char PADDING[] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-void MD5Init(MD5_CTX *context) {
+void ICACHE_FLASH_ATTR
+MD5Init(MD5_CTX *context) {
 	context->count[0] = 0;
 	context->count[1] = 0;
 	context->state[0] = 0x67452301;
@@ -57,7 +40,9 @@ void MD5Init(MD5_CTX *context) {
 	context->state[2] = 0x98BADCFE;
 	context->state[3] = 0x10325476;
 }
-void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen) {
+
+void ICACHE_FLASH_ATTR
+MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen) {
 	unsigned int i = 0, index = 0, partlen = 0;
 	index = (context->count[0] >> 3) & 0x3F;
 	partlen = 64 - index;
@@ -77,7 +62,9 @@ void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen) {
 	}
 	MEMCPY(&context->buffer[index], &input[i], inputlen - i);
 }
-void MD5Final(MD5_CTX *context, unsigned char digest[16]) {
+
+void ICACHE_FLASH_ATTR
+MD5Final(MD5_CTX *context, unsigned char digest[16]) {
 	unsigned int index = 0, padlen = 0;
 	unsigned char bits[8];
 	index = (context->count[0] >> 3) & 0x3F;
@@ -87,7 +74,8 @@ void MD5Final(MD5_CTX *context, unsigned char digest[16]) {
 	MD5Update(context, bits, 8);
 	MD5Encode(digest, context->state, 16);
 }
-void MD5Encode(unsigned char *output, unsigned int *input, unsigned int len) {
+void ICACHE_FLASH_ATTR
+MD5Encode(unsigned char *output, unsigned int *input, unsigned int len) {
 	unsigned int i = 0, j = 0;
 	while (j < len) {
 		output[j] = input[i] & 0xFF;
@@ -98,7 +86,8 @@ void MD5Encode(unsigned char *output, unsigned int *input, unsigned int len) {
 		j += 4;
 	}
 }
-void MD5Decode(unsigned int *output, unsigned char *input, unsigned int len) {
+void ICACHE_FLASH_ATTR
+MD5Decode(unsigned int *output, unsigned char *input, unsigned int len) {
 	unsigned int i = 0, j = 0;
 	while (j < len) {
 		output[i] = (input[j]) | (input[j + 1] << 8) | (input[j + 2] << 16)
@@ -107,7 +96,9 @@ void MD5Decode(unsigned int *output, unsigned char *input, unsigned int len) {
 		j += 4;
 	}
 }
-void MD5Transform(unsigned int state[4], unsigned char block[64]) {
+
+void ICACHE_FLASH_ATTR
+MD5Transform(unsigned int state[4], unsigned char block[64]) {
 	unsigned int a = state[0];
 	unsigned int b = state[1];
 	unsigned int c = state[2];
@@ -187,7 +178,8 @@ void MD5Transform(unsigned int state[4], unsigned char block[64]) {
 	state[3] += d;
 }
 
-void md5_test(void) {
+void ICACHE_FLASH_ATTR
+md5_test(void) {
 	MD5_CTX md5;
 	MD5Init(&md5);
 	int i;
@@ -195,6 +187,7 @@ void md5_test(void) {
 	unsigned char decrypt[16];
 	MD5Update(&md5, encrypt, STRLEN((char *) encrypt));
 	MD5Final(&md5, decrypt);
+	debug("md5 test\r\n");
 	debug("*********************************\r\n");
 	debug("before encrypt:%s\r\nafter encrypt 16bit:", encrypt);
 	for (i = 4; i < 12; i++) {
@@ -207,16 +200,4 @@ void md5_test(void) {
 	}
 	debug("\r\n");
 	debug("*********************************\r\n");
-
-#ifdef _WIN32
-	getchar();
-#endif
 }
-
-#ifdef _WIN32
-int main(int argc, char *argv[])
-{
-	md5_test();
-}
-
-#endif
