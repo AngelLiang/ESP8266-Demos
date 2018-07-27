@@ -37,6 +37,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | N9 | sniffer_app | sniffer使用示例 |
 | N10 | wifi_event_cb_app | 连接Wi-Fi后回调事件功能 |
 | N11 | multiudp_server_app | UDP多播 |
+| N12 | mqtt_app | MQTT client 实例，基于官方SDK example下面的esp_mqtt_proj工程 |
 
 **O系列**：其他（Other）demo，未分类的都放在这里。
 
