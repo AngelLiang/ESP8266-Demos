@@ -4,6 +4,7 @@
 
 #include "ets_sys.h"
 #include "osapi.h"
+#include "mem.h"
 #include "user_interface.h"
 
 #define MEMCPY	os_memcpy
@@ -15,7 +16,6 @@
 
 /****************************************************************/
 #define DEBUG
-
 
 #ifdef DEBUG
 #define debug(fmt, args...) os_printf(fmt, ##args)
@@ -178,15 +178,98 @@ MD5Transform(unsigned int state[4], unsigned char block[64]) {
 	state[3] += d;
 }
 
+/*
+ * function: MD5Digest
+ * parameter: void const *strContent - 需要MD5的字符串
+ *            u16 iLength - 字符串长度
+ *            u8 output[16] - 输出
+ * description: 生成MD5摘要
+ */
 void ICACHE_FLASH_ATTR
-md5_test(void) {
+MD5Digest(void const *strContent, u16 iLength, u8 output[16]) {
+	u8 *q = (u8*) strContent;
+
 	MD5_CTX md5;
 	MD5Init(&md5);
+	MD5Update(&md5, q, iLength);
+	MD5Final(&md5, output);
+}
+
+/*
+ * function: HMAC_MD5
+ * parameter: u8 *inBuffer - 需要加密的字符串
+ *            u16 len - 字符串长度
+ *            u8 *ky - 初始密钥
+ *            u8 output[16] - 输出
+ */
+void ICACHE_FLASH_ATTR
+HMAC_MD5(u8 *inBuffer, u16 len, u8 *ky, u8 output[16]) {
+	int i, j;
+
+	u8 *tempBuffer = (u8 *) os_malloc(len + 64); //第一次HASH的参数
+	u8 Buffer2[80]; //第二次HASH
+
+	u8 key[16];
+	u8 ipad[64], opad[64];
+
+	if (os_strlen(ky) > 16) {
+		MD5Digest(ky, os_strlen(ky), key);
+	} else if (os_strlen(ky) < 16) {
+		i = 0;
+		while (ky[i] != '\0') {
+			key[i] = ky[i];
+			i++;
+		}
+
+		while (i < 16) {
+			key[i] = 0x00;
+			i++;
+		}
+	} else
+		for (i = 0; i < 16; i++) {
+			key[i] = ky[i];
+		}
+	for (i = 0; i < 64; i++) {
+		ipad[i] = 0x36;
+		opad[i] = 0x5c;
+	}
+
+	for (i = 0; i < 16; i++) {
+		ipad[i] = key[i] ^ ipad[i];   //K ⊕ ipad
+		opad[i] = key[i] ^ opad[i];   //K ⊕ opad
+	}
+
+	for (i = 0; i < 64; i++) {
+		tempBuffer[i] = ipad[i];
+	}
+
+	for (i = 64; i < len + 64; i++) {
+		tempBuffer[i] = inBuffer[i - 64];
+	}
+
+	MD5Digest(tempBuffer, len + 64, output);
+
+	for (j = 0; j < 64; j++) {
+		Buffer2[j] = opad[j];
+	}
+
+	for (i = 64; i < 80; i++) {
+		Buffer2[i] = output[i - 64];
+	}
+
+	MD5Digest(Buffer2, 80, output);
+
+	os_free(tempBuffer);
+}
+
+void ICACHE_FLASH_ATTR
+md5_test(void) {
 	int i;
-	unsigned char encrypt[] = "admin";
-	unsigned char decrypt[16];
-	MD5Update(&md5, encrypt, STRLEN((char *) encrypt));
-	MD5Final(&md5, decrypt);
+	u8 encrypt[] = "admin";
+	u8 decrypt[16];
+
+	MD5Digest(encrypt, STRLEN((char *) encrypt), decrypt);
+
 	debug("md5 test\r\n");
 	debug("*********************************\r\n");
 	debug("before encrypt:%s\r\nafter encrypt 16bit:", encrypt);
@@ -200,4 +283,28 @@ md5_test(void) {
 	}
 	debug("\r\n");
 	debug("*********************************\r\n");
+
+	debug("hmacmd5 test\r\n");
+	u8 output[16];
+	HMAC_MD5("", 0, "", output);	// 74e6f7298a9c2d168935f58c001bad88
+	debug("Digest: ");
+	for (i = 0; i < 16; i++) {
+		if (output[i] < 0x10) {
+			debug("%d", 0);
+		}
+		debug("%x", output[i]);
+	}
+	debug("\n");
+
+	u8 *key = "key";
+	// b9092bfe47f21e2930a864b457f7c26d
+	HMAC_MD5(encrypt, STRLEN((char *) encrypt), key, output);
+	debug("Digest: ");
+	for (i = 0; i < 16; i++) {
+		if (output[i] < 0x10) {
+			debug("%d", 0);
+		}
+		debug("%x", output[i]);
+	}
+	debug("\n");
 }
