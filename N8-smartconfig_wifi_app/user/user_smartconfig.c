@@ -1,8 +1,5 @@
 /*
  * user_smartconfig.c
- *
- *  Created on: 2016��11��8��
- *      Author: yannanxiu
  */
 
 #include "ets_sys.h"

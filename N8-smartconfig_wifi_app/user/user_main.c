@@ -83,6 +83,7 @@ print_chip_info(void) {
 	static u8 macAddr[6] = { 0 };
 
 	os_printf("\n*********************************\r\n");
+	os_printf("compile at %s %s\r\n",__DATE__, __TIME__);
 	// SDK版本信息
 	os_printf("SDK version:%s\r\n", system_get_sdk_version());
 	// 芯片序列号
@@ -118,7 +119,6 @@ init_done_cb_init(void) {
 void ICACHE_FLASH_ATTR
 user_init(void) {
 	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
-	os_printf("SDK version:%s\n", system_get_sdk_version());
 	system_init_done_cb(init_done_cb_init);
 }
 
