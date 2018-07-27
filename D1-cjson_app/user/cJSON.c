@@ -1,7 +1,6 @@
 /*
  * Fork form https://github.com/DaveGamble/cJSON
- * 锟斤拷锟斤拷学习cJSON
- * cJSON锟芥本锟斤拷 v1.6.0
+ * cJSON version: v1.6.0
  */
 
 /*
@@ -51,7 +50,7 @@
 #include <math.h>
 #include <limits.h>
 
-#ifndef CJSON_FOR_ESP8266
+#ifndef ESP8266_PLATFORM
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,7 +166,7 @@ typedef struct internal_hooks {
 	{
 		return realloc(pointer, size);
 	}
-	#elif defined(CJSON_FOR_ESP8266)
+	#elif defined(ESP8266_PLATFORM)
 	ICACHE_FLASH_ATTR static void *internal_malloc(size_t size) {
 		return (void *) os_malloc(size);
 	}
@@ -218,7 +217,7 @@ ICACHE_FLASH_ATTR static unsigned char* cJSON_strdup(
  * description: 初始化钩子函数
  */
 CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks) {
-#ifndef CJSON_FOR_ESP8266
+#ifndef ESP8266_PLATFORM
 	if (hooks == NULL)
 	{
 		/* Reset hooks */
@@ -267,7 +266,7 @@ ICACHE_FLASH_ATTR static cJSON *cJSON_New_Item(
 		const internal_hooks * const hooks) {
 	cJSON* node = (cJSON*) hooks->allocate(sizeof(cJSON));
 	if (node) {
-		os_memset(node, '\0', sizeof(cJSON));	// 锟斤拷始锟斤拷为0
+		os_memset(node, '\0', sizeof(cJSON));	// 设置node为0
 	}
 
 	return node;
@@ -389,7 +388,7 @@ ICACHE_FLASH_ATTR static cJSON_bool parse_number(cJSON * const item,
 
 	loop_end: number_c_string[i] = '\0';	// 设置字符串末尾
 
-#ifndef CJSON_FOR_ESP8266
+#ifndef ESP8266_PLATFORM
 	/*
 	 * strtod：将字符串转换成浮点数，有关头文件是#include <stdlib.h>
 	 */
@@ -425,7 +424,7 @@ ICACHE_FLASH_ATTR static cJSON_bool parse_number(cJSON * const item,
 	// 设置类型
 	item->type = cJSON_Number;
 
-#ifndef CJSON_FOR_ESP8266
+#ifndef ESP8266_PLATFORM
 	// 缓存区指针移动
 	input_buffer->offset += (size_t)(after_end - number_c_string);
 #else
@@ -577,7 +576,7 @@ ICACHE_FLASH_ATTR static cJSON_bool print_number(const cJSON * const item,
 	if ((d * 0) != 0) {
 		length = os_sprintf((char*) number_buffer, "null");
 	} else {
-#ifndef CJSON_FOR_ESP8266
+#ifndef ESP8266_PLATFORM
 		/* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
 		length = os_sprintf((char*)number_buffer, "%1.15g", d);
 

@@ -27,14 +27,14 @@
 extern "C" {
 #endif
 
-#define CJSON_FOR_ESP8266
+#define ESP8266_PLATFORM
 
-#ifdef CJSON_FOR_ESP8266
-#include "osapi.h"
-#include "mem.h"
-#include "ets_sys.h"
-#include "osapi.h"
-#include "c_types.h"
+#ifdef ESP8266_PLATFORM
+	#include "osapi.h"
+	#include "mem.h"
+	#include "ets_sys.h"
+	#include "osapi.h"
+	#include "c_types.h"
 #endif
 
 /* project version */
@@ -59,7 +59,7 @@ extern "C" {
 #define cJSON_StringIsConst 512
 
 /* The cJSON structure: */
-/* һ��cJSON�ṹ������ռ�� 4+4+4+4+4+4+8+4 = 36 Byte */
+/* cJSON structure is 4+4+4+4+4+4+8+4 = 36 Byte */
 typedef struct cJSON {
 	/* next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem */
 	struct cJSON *next;
@@ -125,10 +125,10 @@ typedef int cJSON_bool;
 #define CJSON_PUBLIC(type)   __declspec(dllimport) type __stdcall
 #endif
 
-#else /* !WIN32 */  // �������WIN32
+#else /* !WIN32 */  // WIN32
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(CJSON_API_VISIBILITY)
 #define CJSON_PUBLIC(type)   __attribute__((visibility("default"))) type
-#elif defined(CJSON_FOR_ESP8266)		// ��� ICACHE_FLASH_ATTR
+#elif defined(ESP8266_PLATFORM)		// add ICACHE_FLASH_ATTR
 #define CJSON_PUBLIC(type) ICACHE_FLASH_ATTR type
 #else
 #define CJSON_PUBLIC(type) type

@@ -13,7 +13,7 @@
 
 # 字符串解析为cJSON示例
 
-```
+```C
 // ...
 u8* data = "{\"string\":\"hello world\"}";
 cJSON * root = cJSON_Parse(data);
@@ -32,4 +32,5 @@ if(NULL!=root){
 }
 ```
 
-生成JSON示例请参考`cJSON_test.c`测试代码。
+更多JSON示例请参考`user/cJSON_test.c`文件。
+
