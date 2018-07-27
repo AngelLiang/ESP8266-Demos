@@ -42,9 +42,9 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 | 序号 | 工程名称 | 说明 |
 |---|---|---|
-| O1 | empty_app | 空白工程 |
-| O2 | upgrade_app |  远程更新固件示例 |
-| O3 | lwip_open_src_template_proj | 官网提供的lwip示例工程，添加了一些个人示例代码 |
+| O0 | empty_app | 空白工程 |
+| O1 | upgrade_app |  远程更新固件示例 |
+| O2 | lwip_open_src_template_proj | 官网提供的lwip示例工程，添加了一些个人示例代码 |
 
 
 部分app文件夹下有说明文件（README.md）和效果图（screenshot）。
