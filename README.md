@@ -68,5 +68,12 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 # 注意事项
 
-串口打印默认为74800bps。
+- 关于串口
 
+    ESP8266串口打印默认为74800bps。
+
+- 关于中文乱码
+
+    因为源码文件编码默认为UTF-8，而Windows Eclipse IDE默认为GBK，所以可能需要设置一下：
+
+    菜单栏Window -> Preferences -> General -> Workspace -> 面板Text file encoding -> 选择UTF-8 -> OK
