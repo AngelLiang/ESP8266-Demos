@@ -2,7 +2,7 @@
 
 ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
-D系列：与编码（Decode）相关的demo，加密和哈希相关的也会放在这里。
+**D系列**：与编码（Decode）相关的demo，加密和哈希相关的也会放在这里。
 
 | 序号 | 工程名称 | 说明 |
 |---|---|---|
@@ -10,7 +10,7 @@ D系列：与编码（Decode）相关的demo，加密和哈希相关的也会放
 | D2 | base64_app | base64编码示例 |
 | D3 | md5_app | ESP8266使用MD5进行Hash |
 
-H系列：与ESP8266片上硬件（Hardware）资源相关的demo，部分demo会有外设使用实例。
+**H系列**：与ESP8266片上硬件（Hardware）资源相关的demo，部分demo会有外设使用实例。
 
 | 序号 | 工程名称 | 说明 |
 |---|---|---|
@@ -21,7 +21,7 @@ H系列：与ESP8266片上硬件（Hardware）资源相关的demo，部分demo�
 | H5 | hw_timer_app | ESP8266使用硬件中断定时器示例 |
 | H6 | ir_app | IR接口示例 |
 
-N系列：与ESP8266网络（Network）相关的demo。
+**N系列**：与ESP8266网络（Network）相关的demo。
 
 | 序号 | 工程名称 | 说明 |
 |---|---|---|
@@ -38,7 +38,7 @@ N系列：与ESP8266网络（Network）相关的demo。
 | N10 | wifi_event_cb_app | 连接Wi-Fi后回调事件功能 |
 | N11 | multiudp_server_app | UDP多播 |
 
-O系列：其他系列（Other）demo。
+**O系列**：其他（Other）demo，未分类的都放在这里。
 
 | 序号 | 工程名称 | 说明 |
 |---|---|---|
