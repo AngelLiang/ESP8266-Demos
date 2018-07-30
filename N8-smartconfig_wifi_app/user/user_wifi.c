@@ -185,8 +185,6 @@ wifi_check_timer_cb(void) {
  */
 void ICACHE_FLASH_ATTR
 wifi_check_init(u16 interval) {
-	wifi_station_set_reconnect_policy(TRUE);
-
 	os_timer_disarm(&g_wifi_check_timer);
 	os_timer_setfn(&g_wifi_check_timer, (os_timer_func_t *) wifi_check_timer_cb,
 	NULL);
@@ -302,10 +300,8 @@ user_set_station_config(u8* ssid, u8* password) {
 	stationConf.bssid_set = 0;		//need not check MAC address of AP
 	os_memcpy(&stationConf.ssid, ssid, 32);
 	os_memcpy(&stationConf.password, password, 64);
-	bool ret = wifi_station_set_config(&stationConf);
-	if (ret) {
-		debug("[INFO]set station config successful!");
-	}
+	wifi_station_set_config(&stationConf);
+
 }
 
 /*
@@ -313,10 +309,10 @@ user_set_station_config(u8* ssid, u8* password) {
  */
 void ICACHE_FLASH_ATTR
 wifi_connect(WifiCallback cb) {
+	wifi_station_disconnect();
 	// smartconfig 仅支持在单 Station 模式下调接口
 	wifi_set_opmode(STATION_MODE);		// set wifi mode
 	wifiCb = cb;
-	wifi_station_disconnect();
 
 	/*
 	 * 调用 wifi_station_set_reconnect_policy 关闭重连功能，
