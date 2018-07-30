@@ -31,59 +31,5 @@
 #define AP_CACHE_NUMBER    5
 #endif
 
-
-//*********************************************************/
-// 使用下面的wifi配置进行连接
-// 与下面的 SMARTCONFIG_ENABLE 二选一
-//#define WIFI_SSID_ENABLE
-
-#define WIFI_SSID "wifi_ssid"
-#define WIFI_PASS "wifi_pass"
-
-
-//*********************************************************/
-// 上电时使用smartconfig进行wifi配置
-// 与上面的 WIFI_SSID_ENABLE 二选一
-#define SMARTCONFIG_ENABLE
-
-
-#define DISABLE     0
-#define TIMER_MODE  1
-#define EVENT_MODE  2
-
-/*
- * wifi检查连接方式
- * 0 - disable：不检查wifi连接
- * 1 - timer mode：定时检查wifi连接
- * 2 - event mode：注册事件的方式检查wifi连接
- */
-#define WIFI_CHECK_MODE     TIMER_MODE
-
-
-
-//#define DISABLE       0
-//#define TIMER_MODE    1
-#define ESP_MODE        2
-
-/*
- * 是否使用定时器控制wifi状态led灯
- * 0 - disable：不使用wifi led状态灯
- * 1 - timer mode：使用定时器设置wifi led状态灯
- * 2 - esp mode ：使用ESP自带的接口配置wifi led状态的
- */
-#define WIFI_LED_MODE   TIMER_MODE
-
-/* wifi led 引脚配置 */
-#if TIMER_MODE==WIFI_LED_MODE
-    #define WIFI_STATUS_LED_PIN         0
-#elif ESP_MODE==WIFI_LED_MODE
-    #define HUMITURE_WIFI_LED_IO_MUX    PERIPHS_IO_MUX_GPIO0_U
-    #define HUMITURE_WIFI_LED_IO_NUM    0
-    #define HUMITURE_WIFI_LED_IO_FUNC   FUNC_GPIO0
-#else
-#endif
-
-//*********************************************************/
-
 #endif
 

@@ -11,6 +11,27 @@
 #include "smartconfig.h"
 #include "airkiss.h"
 
+#include "user_config.h"
+
+#define DEBUG 1
+//***********************************************************************/
+// debug
+#define PR	os_printf
+
+#ifdef DEBUG
+#define debug(fmt, args...) PR(fmt, ##args)
+#define debugX(level, fmt, args...) if(DEBUG>=level) PR(fmt, ##args);
+#else
+#define debug(fmt, args...)
+#define debugX(level, fmt, args...)
+#endif	/* DEBUG */
+
+//***********************************************************************/
+// global variable
+
+//extern u8 g_smartconfig_running_flag;
+
+//***********************************************************************/
 extern os_timer_t g_smartconig_led_timer;
 
 #define SC_DEVICE_TYPE 		"gh_9e2cff3dfa51" 	//wechat public number
@@ -57,7 +78,7 @@ airkiss_wifilan_time_callback(void) {
 	if (ret != 0) {
 		os_printf("UDP send error!");
 	}
-	os_printf("Finish send notify!\n");
+	debug("Finish send notify!\n");
 }
 
 LOCAL void ICACHE_FLASH_ATTR
@@ -71,10 +92,10 @@ airkiss_wifilan_recv_callbk(void *arg, char *pdata, unsigned short len) {
 	switch (ret) {
 	case AIRKISS_LAN_SSDP_REQ:
 		espconn_get_connection_info(&pssdpudpconn, &pcon_info, 0);
-		os_printf("remote ip: %d.%d.%d.%d \r\n", pcon_info->remote_ip[0],
+		debug("remote ip: %d.%d.%d.%d \r\n", pcon_info->remote_ip[0],
 				pcon_info->remote_ip[1], pcon_info->remote_ip[2],
 				pcon_info->remote_ip[3]);
-		os_printf("remote port: %d \r\n", pcon_info->remote_port);
+		debug("remote port: %d \r\n", pcon_info->remote_port);
 
 		pssdpudpconn.proto.udp->remote_port = pcon_info->remote_port;
 		os_memcpy(pssdpudpconn.proto.udp->remote_ip, pcon_info->remote_ip, 4);
@@ -85,23 +106,23 @@ airkiss_wifilan_recv_callbk(void *arg, char *pdata, unsigned short len) {
 		SC_DEVICE_TYPE, SC_DEVICE_ID, 0, 0, lan_buf, &lan_buf_len, &akconf);
 
 		if (packret != AIRKISS_LAN_PAKE_READY) {
-			os_printf("Pack lan packet error!");
+			debug("Pack lan packet error!");
 			return;
 		}
 
-		os_printf("\r\n\r\n");
+		debug("\r\n\r\n");
 		for (i = 0; i < lan_buf_len; i++)
-			os_printf("%c", lan_buf[i]);
-		os_printf("\r\n\r\n");
+			debug("%c", lan_buf[i]);
+		debug("\r\n\r\n");
 
 		packret = espconn_sendto(&pssdpudpconn, lan_buf, lan_buf_len);
 		if (packret != 0) {
-			os_printf("LAN UDP Send err!");
+			debug("LAN UDP Send err!");
 		}
 
 		break;
 	default:
-		os_printf("Pack is not ssdq req!%d\r\n", ret);
+		debug("Pack is not ssdq req!%d\r\n", ret);
 		break;
 	}
 }
@@ -124,17 +145,17 @@ void ICACHE_FLASH_ATTR
 smartconfig_done(sc_status status, void *pdata) {
 	switch (status) {
 	case SC_STATUS_WAIT:
-		os_printf("SC_STATUS_WAIT\n");
+		debug("SC_STATUS_WAIT\n");
 		break;
 	case SC_STATUS_FIND_CHANNEL:
-		os_printf("SC_STATUS_FIND_CHANNEL\n");
-		user_smartconfig_led_timer_init();
+		debug("SC_STATUS_FIND_CHANNEL\n");
+		user_smartconfig_led_timer_init();		// 启动 smartconfig led timer
 		break;
 	case SC_STATUS_GETTING_SSID_PSWD:
-		os_printf("SC_STATUS_GETTING_SSID_PSWD\n");
+		debug("SC_STATUS_GETTING_SSID_PSWD\n");
 		break;
 	case SC_STATUS_LINK:
-		os_printf("SC_STATUS_LINK\n");
+		debug("SC_STATUS_LINK\n");
 		struct station_config *sta_conf = pdata;
 
 		wifi_station_set_config(sta_conf);
@@ -142,19 +163,19 @@ smartconfig_done(sc_status status, void *pdata) {
 		wifi_station_connect();
 		break;
 	case SC_STATUS_LINK_OVER:
-		os_printf("SC_STATUS_LINK_OVER\n");
+		debug("SC_STATUS_LINK_OVER\n");
 		if (pdata != NULL) {
 			//SC_TYPE_ESPTOUCH
 			uint8 phone_ip[4] = { 0 };
 
 			os_memcpy(phone_ip, (uint8*) pdata, 4);
-			os_printf("Phone ip: %d.%d.%d.%d\n", phone_ip[0], phone_ip[1],
+			debug("Phone ip: %d.%d.%d.%d\n", phone_ip[0], phone_ip[1],
 					phone_ip[2], phone_ip[3]);
 
 			// TODO:
-			os_printf("[INFO] stop smartconfig timer\r\n");
-			user_smartconfig_led_timer_stop();
-			wifi_status_led_init();
+			debug("[INFO] stop smartconfig timer\r\n");
+			user_smartconfig_led_timer_stop();		// 停止smartconfig控制led闪烁
+			wifi_status_led_init();					// 启动wifi状态控制led
 
 		} else {
 			//SC_TYPE_AIRKISS - support airkiss v2.0

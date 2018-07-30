@@ -107,6 +107,7 @@ print_chip_info(void) {
 void ICACHE_FLASH_ATTR
 init_done_cb_init(void) {
 	print_chip_info();
+	wifi_set_opmode(STATION_MODE);		// set wifi mode
 	wifi_connect();
 }
 

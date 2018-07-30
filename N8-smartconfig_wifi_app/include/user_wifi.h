@@ -6,10 +6,11 @@
 #define _USER_WIFI_H_
 
 #include "os_type.h"
+#include "wifi_config.h"
 
 extern void wifi_connect(void);
 
-extern void wifi_check_init(void);
+extern void wifi_check_init(u16);
 extern void wifi_status_led_init(void);
 
 extern void user_smartconfig_led_timer_init(void);
