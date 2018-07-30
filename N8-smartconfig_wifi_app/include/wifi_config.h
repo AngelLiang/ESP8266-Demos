@@ -13,8 +13,8 @@
 // 与下面的 SMARTCONFIG_ENABLE 二选一
 //#define WIFI_SSID_ENABLE
 
-#define WIFI_SSID "wifi_ssid"
-#define WIFI_PASS "wifi_pass"
+#define WIFI_SSID "WIFI_SSID"
+#define WIFI_PASS "WIFI_PASS"
 
 //***********************************************************************/
 // 上电时使用smartconfig进行wifi配置，然后过一段时间自动连接之前配置好的wifi
