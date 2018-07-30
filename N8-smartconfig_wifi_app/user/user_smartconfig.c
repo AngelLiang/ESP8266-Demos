@@ -162,7 +162,6 @@ smartconfig_done(sc_status status, void *pdata) {
 		wifi_station_disconnect();
 		wifi_station_connect();
 
-
 		break;
 	case SC_STATUS_LINK_OVER:
 		debug("SC_STATUS_LINK_OVER\n");
