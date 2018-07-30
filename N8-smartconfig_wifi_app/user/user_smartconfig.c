@@ -161,6 +161,8 @@ smartconfig_done(sc_status status, void *pdata) {
 		wifi_station_set_config(sta_conf);
 		wifi_station_disconnect();
 		wifi_station_connect();
+
+
 		break;
 	case SC_STATUS_LINK_OVER:
 		debug("SC_STATUS_LINK_OVER\n");
@@ -172,16 +174,19 @@ smartconfig_done(sc_status status, void *pdata) {
 			debug("Phone ip: %d.%d.%d.%d\n", phone_ip[0], phone_ip[1],
 					phone_ip[2], phone_ip[3]);
 
-			// TODO:
-			debug("[INFO] stop smartconfig timer\r\n");
-			user_smartconfig_led_timer_stop();		// 停止smartconfig控制led闪烁
-			wifi_status_led_init();					// 启动wifi状态控制led
-
 		} else {
 			//SC_TYPE_AIRKISS - support airkiss v2.0
 			airkiss_start_discover();
 		}
 		smartconfig_stop();
+
+		// TODO:
+		debug("[INFO] stop smartconfig timer\r\n");
+		user_smartconfig_led_timer_stop();		// 停止smartconfig控制led闪烁
+		wifi_status_led_init();					// 启动wifi状态控制led
+		wifi_check_init(500);		// wifi check
+
+
 		break;
 	}
 }

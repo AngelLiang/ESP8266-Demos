@@ -83,7 +83,7 @@ print_chip_info(void) {
 	static u8 macAddr[6] = { 0 };
 
 	os_printf("\n*********************************\r\n");
-	os_printf("compile at %s %s\r\n",__DATE__, __TIME__);
+	os_printf("compile at %s %s\r\n", __DATE__, __TIME__);
 	// SDK版本信息
 	os_printf("SDK version:%s\r\n", system_get_sdk_version());
 	// 芯片序列号
@@ -104,11 +104,25 @@ print_chip_info(void) {
 	os_printf("*********************************\r\n");
 }
 
+/*
+ * function: wifi_connect_cb
+ * description: wifi连接回调
+ *              开发者需要实现一个回调函数，当发生wifi连接事件时就会进入此回调
+ */
+void ICACHE_FLASH_ATTR
+wifi_connect_cb(u8 status) {
+	if (status == STATION_GOT_IP) {
+		os_printf("wifi connect success!\r\n");
+	} else {
+
+	}
+}
+
 void ICACHE_FLASH_ATTR
 init_done_cb_init(void) {
 	print_chip_info();
 	wifi_set_opmode(STATION_MODE);		// set wifi mode
-	wifi_connect();
+	wifi_connect(wifi_connect_cb);		// 设置用户wifi回调函数
 }
 
 /******************************************************************************

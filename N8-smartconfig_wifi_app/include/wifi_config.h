@@ -1,8 +1,5 @@
 /*
  * wifi_config.h
- *
- *  Created on: 2018年7月30日
- *      Author: Administrator
  */
 
 #ifndef _WIFI_CONFIG_H_

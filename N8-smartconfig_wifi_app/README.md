@@ -85,10 +85,19 @@ pm open,type:2 0
 // ...
 
 void ICACHE_FLASH_ATTR
+wifi_connect_cb(u8 status) {
+	if (status == STATION_GOT_IP) {
+		os_printf("wifi connect success!\r\n");
+	} else {
+
+	}
+}
+
+void ICACHE_FLASH_ATTR
 init_done_cb_init(void) {
-    // ...
-    wifi_set_opmode(STATION_MODE);  // set wifi mode
-    wifi_connect();
+	print_chip_info();
+	wifi_set_opmode(STATION_MODE);		// set wifi mode
+	wifi_connect(wifi_connect_cb);		// 设置用户wifi回调函数
 }
 
 void ICACHE_FLASH_ATTR

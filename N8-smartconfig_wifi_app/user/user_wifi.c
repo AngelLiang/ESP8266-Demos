@@ -50,10 +50,16 @@ static os_timer_t g_wifi_check_timer;
 static os_timer_t g_wifi_led_timer;
 
 static struct ip_info g_ipConfig;
-static os_timer_t g_wifi_connect_timer;
+static os_timer_t g_wifi_smartconfig_timer;
 static os_timer_t g_smartconig_led_timer;
 
 static u8 g_smartconfig_running_flag = IS_STOP;
+
+// 用户wifi回调函数
+WifiCallback wifiCb = NULL;
+// 记录wifi状态
+static u8 wifiStatus = STATION_IDLE, lastWifiStatus = STATION_IDLE;
+
 //***********************************************************************/
 
 u32 ICACHE_FLASH_ATTR
@@ -82,10 +88,11 @@ void ICACHE_FLASH_ATTR
 wifi_status_led_init(void) {
 	// 使用定时器控制led显示wifi状态
 	debug("[INFO] WiFi_LED_STATUS_TIMER_ENABLE\r\n");
-	os_timer_disarm(&g_wifi_connect_timer);
-	os_timer_setfn(&g_wifi_connect_timer, (os_timer_func_t *) wifi_led_timer_cb,
-	NULL);
-	os_timer_arm(&g_wifi_connect_timer, WIFI_LED_INTERVAL, 1);
+	os_timer_disarm(&g_wifi_smartconfig_timer);
+	os_timer_setfn(&g_wifi_smartconfig_timer,
+			(os_timer_func_t *) wifi_led_timer_cb,
+			NULL);
+	os_timer_arm(&g_wifi_smartconfig_timer, WIFI_LED_INTERVAL, 1);
 
 }
 
@@ -145,24 +152,28 @@ user_smartconfig_init(void) {
  */
 static void ICACHE_FLASH_ATTR
 wifi_check_timer_cb(void) {
-	static u8 from_disconnect_to_connect = 1;
-	u8 status = wifi_station_get_connect_status();
 
-	if (STATION_GOT_IP == status) {
+	wifi_get_ip_info(STATION_IF, &g_ipConfig);
+	wifiStatus = wifi_station_get_connect_status();
+
+	if (wifiStatus == STATION_GOT_IP && g_ipConfig.ip.addr != 0) {
 		wifi_check_init(WIFI_CHECK_TIMER_INTERVAL);
 
-		// 从wifi断开连接状态到连接成功状态
-		if (1 == from_disconnect_to_connect) {
-			from_disconnect_to_connect = 0;
-			debug("[INFO] wifi connected!\r\n");
-			// TODO:
-			// wifi连接成功后
-		}
-
 	} else {	// wifi断开
+		debug("wifi connect fail!\r\n");
 		wifi_check_init(500);
-		from_disconnect_to_connect = 1;
+
+		wifi_station_connect();		// 尝试重连
 	}
+
+	// user callback
+	if (wifiStatus != lastWifiStatus) {
+		lastWifiStatus = wifiStatus;
+		if (wifiCb) {
+			wifiCb(wifiStatus);
+		}
+	}
+
 }
 
 /*
@@ -178,7 +189,6 @@ wifi_check_init(u16 interval) {
 	os_timer_setfn(&g_wifi_check_timer, (os_timer_func_t *) wifi_check_timer_cb,
 	NULL);
 	os_timer_arm(&g_wifi_check_timer, interval, 0);
-	//debug("[INFO] init Wi-Fi check!\r\n");
 }
 
 /*************************************************************/
@@ -187,46 +197,43 @@ wifi_check_init(u16 interval) {
  * function: wifi_connect_timer_cb
  */
 static void ICACHE_FLASH_ATTR
-wifi_connect_timer_cb(void *arg) {
+wifi_smartconfig_timer_cb(void *arg) {
+	debug("wifi_smartconfig_timer_cb\r\n");
 
-	os_timer_disarm(&g_wifi_connect_timer);	// stop g_wifi_connect_timer
-
-	wifi_get_ip_info(STATION_IF, &g_ipConfig);
-	u8 wifi_status = wifi_station_get_connect_status();
+	os_timer_disarm(&g_wifi_smartconfig_timer);	// stop g_wifi_connect_timer
 
 	user_smartconfig_led_timer_stop();	// 停止smartconfig控制led
+
 	if (IS_RUNNING == g_smartconfig_running_flag) {
 		debug("[INFO] smartconfig stop!\r\n");
 		smartconfig_stop();			// 无论smartconfig是否成功都要释放
 		g_smartconfig_running_flag = IS_STOP;
 	}
 
-	// 检查wifi是否连接
-	if (STATION_GOT_IP == wifi_status && g_ipConfig.ip.addr != 0) {
-		debug("[INFO] Wi-Fi connected from smartconfig!\r\n");
-	} else {
-		debug("[INFO] Wi-Fi connect fail from smartconfig!\r\n");
-		wifi_station_disconnect();
-		wifi_station_connect();		// 尝试重连
-	}
-
-	wifi_check_init(WIFI_CHECK_TIMER_INTERVAL);		// wifi check
-	wifi_status_led_init();	// wifi led
-
 	wifi_station_set_reconnect_policy(TRUE);	//
 	wifi_station_set_auto_connect(TRUE);		// auto connect wifi
+
+	wifi_check_init(500);		// wifi check
+	wifi_status_led_init();	// wifi led
+
 }
 
 /*
  * function: wifi_connect_timer_init
  * description:
  */
-static void ICACHE_FLASH_ATTR
-wifi_connect_timer_init(void) {
-	os_timer_disarm(&g_wifi_connect_timer);
-	os_timer_setfn(&g_wifi_connect_timer,
-			(os_timer_func_t *) wifi_connect_timer_cb, NULL);
-	os_timer_arm(&g_wifi_connect_timer, SMARTCONFIG_WAIT_TIME, 0);
+void ICACHE_FLASH_ATTR
+wifi_smartconfig_timer_init(void) {
+	os_timer_disarm(&g_wifi_smartconfig_timer);
+	os_timer_setfn(&g_wifi_smartconfig_timer,
+			(os_timer_func_t *) wifi_smartconfig_timer_cb,
+			NULL);
+	os_timer_arm(&g_wifi_smartconfig_timer, SMARTCONFIG_WAIT_TIME, 0);
+}
+
+void ICACHE_FLASH_ATTR
+wifi_smartconfig_timer_stop(void) {
+	os_timer_disarm(&g_wifi_smartconfig_timer);
 }
 
 /*************************************************************/
@@ -250,16 +257,16 @@ user_set_station_config(u8* ssid, u8* password) {
  * function: wifi_connect
  */
 void ICACHE_FLASH_ATTR
-wifi_connect(void) {
+wifi_connect(WifiCallback cb) {
 	//wifi_set_opmode(STATION_MODE);		// set wifi mode
+	wifiCb = cb;
 	wifi_station_disconnect();
 
 #ifdef WIFI_SSID_ENABLE
 	user_set_station_config(WIFI_SSID, WIFI_PASS);
 	wifi_station_connect();
-
-	wifi_check_init(WIFI_CHECK_TIMER_INTERVAL);		// wifi check
-	wifi_status_led_init();// wifi led
+	wifi_status_led_init();		// wifi led
+	wifi_check_init(500);// wifi check
 
 	/* WIFI_SSID_ENABLE */
 #elif defined(SMARTCONFIG_ENABLE)
@@ -268,7 +275,8 @@ wifi_connect(void) {
 	wifi_station_set_auto_connect(FALSE);
 
 	user_smartconfig_init();
-	wifi_connect_timer_init();
+	wifi_smartconfig_timer_init();
 #endif	/* SMARTCONFIG_ENABLE */
+
 }
 
