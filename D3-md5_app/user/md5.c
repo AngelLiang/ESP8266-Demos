@@ -12,7 +12,14 @@
 #define STRNCMP os_strncmp
 #define MEMCMP os_memcmp
 
+#define MEMSET	os_memset
+#define STRNCPY	os_strncpy
+#define MALLOC	os_malloc
+#define FREE	os_free
+
 #include "md5.h"
+
+#define MD5_TEST
 
 /****************************************************************/
 #define DEBUG
@@ -206,35 +213,26 @@ void ICACHE_FLASH_ATTR
 HMAC_MD5(u8 *inBuffer, u16 len, u8 *ky, u8 output[16]) {
 	int i, j;
 
-	u8 *tempBuffer = (u8 *) os_malloc(len + 64); //第一次HASH的参数
+	u8 *tempBuffer = (u8 *) MALLOC(len + 64); //第一次HASH的参数
 	u8 Buffer2[80]; //第二次HASH
 
-	u8 key[16];
+	u8 key[64];
 	u8 ipad[64], opad[64];
 
-	if (os_strlen(ky) > 16) {
-		MD5Digest(ky, os_strlen(ky), key);
-	} else if (os_strlen(ky) < 16) {
-		i = 0;
-		while (ky[i] != '\0') {
-			key[i] = ky[i];
-			i++;
-		}
+	MEMSET(key, 0, 64);
 
-		while (i < 16) {
-			key[i] = 0x00;
-			i++;
-		}
-	} else
-		for (i = 0; i < 16; i++) {
-			key[i] = ky[i];
-		}
+	if (os_strlen(ky) > 64) {
+		MD5Digest(ky, STRLEN(ky), key);
+	} else {
+		STRNCPY(key, ky, 64);
+	}
+
 	for (i = 0; i < 64; i++) {
 		ipad[i] = 0x36;
 		opad[i] = 0x5c;
 	}
 
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < 64; i++) {
 		ipad[i] = key[i] ^ ipad[i];   //K ⊕ ipad
 		opad[i] = key[i] ^ opad[i];   //K ⊕ opad
 	}
@@ -259,8 +257,10 @@ HMAC_MD5(u8 *inBuffer, u16 len, u8 *ky, u8 output[16]) {
 
 	MD5Digest(Buffer2, 80, output);
 
-	os_free(tempBuffer);
+	FREE(tempBuffer);
 }
+
+#ifdef MD5_TEST
 
 void ICACHE_FLASH_ATTR
 md5_test(void) {
@@ -296,8 +296,8 @@ md5_test(void) {
 	}
 	debug("\n");
 
-	u8 *key = "key";
 	// b9092bfe47f21e2930a864b457f7c26d
+	u8 *key = "key";
 	HMAC_MD5(encrypt, STRLEN((char *) encrypt), key, output);
 	debug("Digest: ");
 	for (i = 0; i < 16; i++) {
@@ -307,4 +307,33 @@ md5_test(void) {
 		debug("%x", output[i]);
 	}
 	debug("\n");
+
+	// 超过16个字节的key
+	// e5d88b25c472411491dced7d1f0e42d3
+	u8 *key16 = "12345678901234567";
+	HMAC_MD5(encrypt, STRLEN((char *) encrypt), key16, output);
+	debug("Digest 16: ");
+	for (i = 0; i < 16; i++) {
+		if (output[i] < 0x10) {
+			debug("%d", 0);
+		}
+		debug("%x", output[i]);
+	}
+	debug("\n");
+
+	// 超过64个字节的key
+	// 4a646bce9962a8953c4a88e9af844907
+	u8 *key64 = "12345678901234567890123456789012345678901234567890123456789012345";
+	HMAC_MD5(encrypt, STRLEN((char *) encrypt), key64, output);
+	debug("Digest 64: ");
+	for (i = 0; i < 16; i++) {
+		if (output[i] < 0x10) {
+			debug("%d", 0);
+		}
+		debug("%x", output[i]);
+	}
+	debug("\n");
+
 }
+
+#endif
