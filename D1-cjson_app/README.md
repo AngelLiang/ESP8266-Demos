@@ -1,4 +1,4 @@
-# cJSON_app
+# cjson_app
 
 移植cJSON到ESP8266，目前使用的cJSON版本是1.6.0。
 
