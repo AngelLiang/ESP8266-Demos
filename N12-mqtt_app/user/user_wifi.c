@@ -44,8 +44,6 @@
 // GPIO reverse
 #define GPIO_REV(x)		GPIO_OUTPUT_SET(x, (1-GPIO_INPUT_GET(x)))
 
-#define IS_RUNNING		1
-#define IS_STOP			0
 //***********************************************************************/
 // gloabl variable
 static os_timer_t g_wifi_check_timer;
@@ -54,8 +52,6 @@ static os_timer_t g_wifi_led_timer;
 static struct ip_info g_ipConfig;
 static os_timer_t g_wifi_smartconfig_timer;
 static os_timer_t g_smartconig_led_timer;
-
-static u8 g_smartconfig_running_flag = IS_STOP;
 
 // 用户wifi回调函数
 WifiCallback wifiCb = NULL;
@@ -134,14 +130,61 @@ user_smartconfig_led_timer_stop(void) {
  */
 static void ICACHE_FLASH_ATTR
 user_smartconfig_init(void) {
+	// smartconfig 仅支持在单 Station 模式下调接口
+	wifi_set_opmode(STATION_MODE);		// set wifi mode
+	// FALSE - 执行完 user_init 函数后不连接
+	wifi_station_set_auto_connect(FALSE);
 
 	//esptouch_set_timeout(30);
 	//SC_TYPE_ESPTOUCH,SC_TYPE_AIRKISS,SC_TYPE_ESPTOUCH_AIRKISS
 	smartconfig_set_type(SC_TYPE_ESPTOUCH_AIRKISS);
 	smartconfig_start(smartconfig_done);
-	g_smartconfig_running_flag = IS_RUNNING;
+
 	GPIO_HIGH(WIFI_STATUS_LED_PIN);
 	debug("[INFO] smartconfig start!\r\n");
+}
+
+/*************************************************************/
+static void ICACHE_FLASH_ATTR
+wifi_handle_event_cb(System_Event_t *evt) {
+#if 0
+	debug("event %x\n", evt->event);
+	switch (evt->event) {
+		case EVENT_STAMODE_CONNECTED:
+		debug("connect to ssid %s, channel %d\n",
+				evt->event_info.connected.ssid,
+				evt->event_info.connected.channel);
+		break;
+		case EVENT_STAMODE_DISCONNECTED:
+		debug("disconnect from ssid %s, reason %d\n",
+				evt->event_info.disconnected.ssid,
+				evt->event_info.disconnected.reason);
+		break;
+		case EVENT_STAMODE_AUTHMODE_CHANGE:
+		debug("mode: %d -> %d\n", evt->event_info.auth_change.old_mode,
+				evt->event_info.auth_change.new_mode);
+		break;
+		case EVENT_STAMODE_GOT_IP:
+		debug("ip:" IPSTR ",mask:" IPSTR ",gw:" IPSTR,
+				IP2STR(&evt->event_info.got_ip.ip),
+				IP2STR(&evt->event_info.got_ip.mask),
+				IP2STR(&evt->event_info.got_ip.gw));
+		debug("\n");
+		break;
+		case EVENT_SOFTAPMODE_STACONNECTED:
+		debug("station:	" MACSTR "join,	AID	=	%d\n",
+				MAC2STR(evt->event_info.sta_connected.mac),
+				evt->event_info.sta_connected.aid);
+		break;
+		case EVENT_SOFTAPMODE_STADISCONNECTED:
+		debug("station:	" MACSTR "leave, AID	=	%d\n",
+				MAC2STR(evt->event_info.sta_disconnected.mac),
+				evt->event_info.sta_disconnected.aid);
+		break;
+		default:
+		break;
+	}
+#endif
 }
 
 /*************************************************************/
@@ -185,6 +228,16 @@ wifi_check_timer_cb(void) {
  */
 void ICACHE_FLASH_ATTR
 wifi_check_init(u16 interval) {
+	/*
+	 * 调用 wifi_station_set_reconnect_policy 关闭重连功能，
+	 * 且未调用 wifi_set_event_handler_cb 注册 Wi-Fi 事件回调，
+	 * 则 wifi_station_get_connect_status接口  失效，无法准确获得连接状态。
+	 */
+
+	// 设置 ESP8266 Station 连接 AP 失败或断开后是否重连。
+	wifi_station_set_reconnect_policy(TRUE);
+	wifi_set_event_handler_cb(wifi_handle_event_cb);
+
 	os_timer_disarm(&g_wifi_check_timer);
 	os_timer_setfn(&g_wifi_check_timer, (os_timer_func_t *) wifi_check_timer_cb,
 	NULL);
@@ -192,48 +245,6 @@ wifi_check_init(u16 interval) {
 }
 
 /*************************************************************/
-
-static void ICACHE_FLASH_ATTR
-wifi_handle_event_cb(System_Event_t *evt) {
-#if 0
-	debug("event %x\n", evt->event);
-	switch (evt->event) {
-	case EVENT_STAMODE_CONNECTED:
-		debug("connect to ssid %s, channel %d\n",
-				evt->event_info.connected.ssid,
-				evt->event_info.connected.channel);
-		break;
-	case EVENT_STAMODE_DISCONNECTED:
-		debug("disconnect from ssid %s, reason %d\n",
-				evt->event_info.disconnected.ssid,
-				evt->event_info.disconnected.reason);
-		break;
-	case EVENT_STAMODE_AUTHMODE_CHANGE:
-		debug("mode: %d -> %d\n", evt->event_info.auth_change.old_mode,
-				evt->event_info.auth_change.new_mode);
-		break;
-	case EVENT_STAMODE_GOT_IP:
-		debug("ip:" IPSTR ",mask:" IPSTR ",gw:" IPSTR,
-				IP2STR(&evt->event_info.got_ip.ip),
-				IP2STR(&evt->event_info.got_ip.mask),
-				IP2STR(&evt->event_info.got_ip.gw));
-		debug("\n");
-		break;
-	case EVENT_SOFTAPMODE_STACONNECTED:
-		debug("station:	" MACSTR "join,	AID	=	%d\n",
-				MAC2STR(evt->event_info.sta_connected.mac),
-				evt->event_info.sta_connected.aid);
-		break;
-	case EVENT_SOFTAPMODE_STADISCONNECTED:
-		debug("station:	" MACSTR "leave, AID	=	%d\n",
-				MAC2STR(evt->event_info.sta_disconnected.mac),
-				evt->event_info.sta_disconnected.aid);
-		break;
-	default:
-		break;
-	}
-#endif
-}
 
 /*
  * function: wifi_connect_timer_cb
@@ -248,11 +259,8 @@ wifi_smartconfig_timer_cb(void *arg) {
 
 	user_smartconfig_led_timer_stop();	// 停止smartconfig控制led
 
-	if (IS_RUNNING == g_smartconfig_running_flag) {
-		debug("[INFO] smartconfig stop!\r\n");
-		smartconfig_stop();			// 无论smartconfig是否成功都要释放
-		g_smartconfig_running_flag = IS_STOP;
-	}
+	debug("[INFO] smartconfig stop!\r\n");
+	smartconfig_stop();			// 无论smartconfig是否成功都要释放
 
 	// 查询 Wi-Fi Station 接口保存在 Flash 中的配置参数。
 	wifi_station_get_config_default(&stationConf);
@@ -301,7 +309,6 @@ user_set_station_config(u8* ssid, u8* password) {
 	os_memcpy(&stationConf.ssid, ssid, 32);
 	os_memcpy(&stationConf.password, password, 64);
 	wifi_station_set_config(&stationConf);
-
 }
 
 /*
@@ -309,38 +316,29 @@ user_set_station_config(u8* ssid, u8* password) {
  */
 void ICACHE_FLASH_ATTR
 wifi_connect(WifiCallback cb) {
-	wifi_station_disconnect();
 	// smartconfig 仅支持在单 Station 模式下调接口
-	wifi_set_opmode(STATION_MODE);		// set wifi mode
+	//wifi_set_opmode(STATION_MODE);		// set wifi mode
 	wifiCb = cb;
+	wifi_station_disconnect();
 
-	/*
-	 * 调用 wifi_station_set_reconnect_policy 关闭重连功能，
-	 * 且未调用 wifi_set_event_handler_cb 注册 Wi-Fi 事件回调，
-	 * 则 wifi_station_get_connect_status接口  失效，无法准确获得连接状态。
-	 */
+	// 上电是否自动连接
+	// TRUE - 执行完 user_init 函数后则自动连接
+	wifi_station_set_auto_connect(TRUE);
 
-	// 设置 ESP8266 Station 连接 AP 失败或断开后是否重连。
-	wifi_station_set_reconnect_policy(TRUE);
-	wifi_set_event_handler_cb(wifi_handle_event_cb);
-	// 上电是否进行连接
-	wifi_station_set_auto_connect(FALSE);
-
-	//wifi_station_ap_number_set(5);
-
-#ifdef WIFI_SSID_ENABLE
 	user_set_station_config(WIFI_SSID, WIFI_PASS);
 	wifi_station_connect();
-	wifi_status_led_init();		// wifi led
-	wifi_check_init(WIFI_CHECK_TIMER_INTERVAL);// wifi check
 
-	/* WIFI_SSID_ENABLE */
-#elif defined(SMARTCONFIG_ENABLE)
-	debug("[INFO] SMARTCONFIG_ENABLE\r\n");
+	wifi_status_led_init();	// wifi led
+	wifi_check_init(WIFI_CHECK_TIMER_INTERVAL);	// wifi check
+
+}
+
+void ICACHE_FLASH_ATTR
+smartconfig_connect(WifiCallback cb) {
+	wifiCb = cb;
+	wifi_station_disconnect();
 
 	user_smartconfig_init();
 	wifi_smartconfig_timer_init();
-#endif	/* SMARTCONFIG_ENABLE */
-
 }
 

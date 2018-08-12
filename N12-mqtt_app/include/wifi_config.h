@@ -7,16 +7,10 @@
 
 //***********************************************************************/
 // 使用下面的wifi配置进行连接
-// 与下面的 SMARTCONFIG_ENABLE 二选一
-//#define WIFI_SSID_ENABLE
+// 调用 wifi_connect() 即可
 
-#define WIFI_SSID "TP-WIFI_SSID"
-#define WIFI_PASS "WIFI_SSID"
-
-//***********************************************************************/
-// 上电时使用smartconfig进行wifi配置，然后过一段时间自动连接之前配置好的wifi
-// 与上面的 WIFI_SSID_ENABLE 二选一
-#define SMARTCONFIG_ENABLE
+#define WIFI_SSID "WIFI_SSID"
+#define WIFI_PASS "123456789"
 
 //***********************************************************************/
 

@@ -36,16 +36,16 @@
 
 typedef struct{
 	uint32_t cfg_holder;
-	uint8_t device_id[32];
+	uint8_t device_id[128];
 
 	uint8_t sta_ssid[64];
 	uint8_t sta_pwd[64];
 	uint32_t sta_type;
 
-	uint8_t mqtt_host[64];
+	uint8_t mqtt_host[128];
 	uint32_t mqtt_port;
-	uint8_t mqtt_user[32];
-	uint8_t mqtt_pass[32];
+	uint8_t mqtt_user[128];
+	uint8_t mqtt_pass[128];
 	uint32_t mqtt_keepalive;
 	uint8_t security;
 } SYSCFG;

@@ -6,23 +6,19 @@
 
 当然也可以启用`WIFI_SSID_ENABLE`，直接使用写死在代码的`WIFI_SSID`和`WIFI_PASS`进行连接。
 
-# 配置
+
+
+## 配置
 
 在`include/user_connfig.h`文件可以进行自定义配置：
 
 ```C
 //***********************************************************************/
 // 使用下面的wifi配置进行连接
-// 与下面的 SMARTCONFIG_ENABLE 二选一
-//#define WIFI_SSID_ENABLE
+// 调用 wifi_connect() 即可
 
 #define WIFI_SSID "WIFI_SSID"
-#define WIFI_PASS "WIFI_PASS"
-
-//***********************************************************************/
-// 上电时使用smartconfig进行wifi配置，然后过一段时间自动连接之前配置好的wifi
-// 与上面的 WIFI_SSID_ENABLE 二选一
-#define SMARTCONFIG_ENABLE
+#define WIFI_PASS "123456789"
 
 //***********************************************************************/
 
@@ -32,43 +28,53 @@
 //***********************************************************************/
 ```
 
-# 实例效果
+
+
+## 实例效果
 
 烧写bin文件成功后，重启ESP8266，打开串口，如果成功则可以看到下面信息，以下为示例：
 
 ```
-[INFO] SMARTCONFIG_ENABLE
+SDK ver: 2.0.0(656edbf) compiled @ Jul 19 2016 17:58:40
+phy ver: 1055, pp ver: 10.2
+
 SC version: V2.5.4
 [INFO] smartconfig start!
-scandone
-scandone
-SC_STATUS_FIND_CHANNEL
-
-TYPE: ESPTOUCH
-T|AP MAC: <MAC>
-SC_STATUS_GETTING_SSID_PSWD
-T|pswd: <WIFI_PASS>
-T|ssid: <WIFI_SSID>
-SC_STATUS_LINK
+mode : sta(5c:cf:7f:f7:99:6f)
+add if0
+wifi_smartconfig_timer_cb
+[INFO] smartconfig stop!
+wifi ssid:WIFI_SSID 
+wifi pass:123456789 
+[INFO] WiFi_LED_STATUS_TIMER_ENABLE
+wifi connect fail!
 scandone
 state: 0 -> 2 (b0)
 state: 2 -> 3 (0)
 state: 3 -> 5 (10)
 add 0
-aid 2
+aid 1
 cnt 
+wifi connect fail!
 
-connected with WIFI_SSID, channel 13
+connected with WIFI_SSID, channel 11
 dhcp client start...
-ip:192.168.10.180,mask:255.255.255.0,gw:192.168.10.1
-SC_STATUS_LINK_OVER
-Phone ip: 192.168.10.133
-[INFO] stop smartconfig timer
-[INFO] WiFi_LED_STATUS_TIMER_ENABLE
+wifi connect fail!
+ip:192.168.191.2,mask:255.255.255.0,gw:192.168.191.1
+wifi connect success!
 pm open,type:2 0
 ```
 
-# 移植说明
+
+
+## 相关接口
+
+- `void wifi_connect(WifiCallback cb);`：直接使用`WIFI_SSID`和`WIFI_PASS`进行连接
+- `void smartconfig_connect(WifiCallback cb);`：先进行smartconfig，如果没有配网信息则自动连接上次的wifi
+
+
+
+## 移植说明
 
 只需要拷贝以下文件即可简单移植到新工程：
 
@@ -76,8 +82,7 @@ pm open,type:2 0
 - smartconfig源码：`user/user_smartconfig.c`+`include/user_smartconfig.h`
 - wifi配置：`wifi_config.h`
 
-
-之后只需在`user_main.c`中这样调用即可：
+之后参考`user_main.c`的代码调用即可：
 
 ```C
 #include "user_wifi.h"
@@ -95,20 +100,38 @@ wifi_connect_cb(u8 status) {
 
 void ICACHE_FLASH_ATTR
 init_done_cb_init(void) {
-	print_chip_info();
-	wifi_set_opmode(STATION_MODE);		// set wifi mode
-	wifi_connect(wifi_connect_cb);		// 设置用户wifi回调函数
+	//print_chip_info();
+
+	/*
+	 * smartconfig_connect 只能在 init_done_cb_init 调用才正常
+	 * 先进行smartconfig，没有配网信息则自动连接上次的wifi
+	 */
+	smartconfig_connect(wifi_connect_cb);
+	/* OR */
+	//wifi_connect(wifi_connect_cb);
 }
 
 void ICACHE_FLASH_ATTR
 user_init(void) {
-    // uart_init(BIT_RATE_115200, BIT_RATE_115200);
-    system_init_done_cb(init_done_cb_init);
+	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
+
+	wifi_set_opmode(STATION_MODE);		// set wifi mode
+
+	/* 与 smartconfig_connect() 二选一
+	 * wifi_connect() 在这里调用正常
+	 */
+	//wifi_connect(wifi_connect_cb);
+	/* 在这里调用不正常，无法用手机配网  */
+	//smartconfig_connect(wifi_connect_cb);
+
+	system_init_done_cb(init_done_cb_init);
 }
 
 ```
 
-# ESP8266 smartconfig手机App源码
+
+
+## ESP8266 smartconfig手机配网App源码
 
 - Android：https://github.com/EspressifApp/EsptouchForAndroid
 - iOS：https://github.com/EspressifApp/EsptouchForIOS

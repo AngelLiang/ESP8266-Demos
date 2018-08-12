@@ -120,9 +120,15 @@ wifi_connect_cb(u8 status) {
 
 void ICACHE_FLASH_ATTR
 init_done_cb_init(void) {
-	print_chip_info();
-	wifi_set_opmode(STATION_MODE);		// set wifi mode
-	wifi_connect(wifi_connect_cb);		// 设置用户wifi回调函数
+	//print_chip_info();
+
+	/*
+	 * smartconfig_connect 只能在 init_done_cb_init 调用才正常
+	 * 先进行smartconfig，没有配网信息则自动连接上次的wifi
+	 */
+	smartconfig_connect(wifi_connect_cb);
+	/* OR */
+	//wifi_connect(wifi_connect_cb);
 }
 
 /******************************************************************************
@@ -134,6 +140,16 @@ init_done_cb_init(void) {
 void ICACHE_FLASH_ATTR
 user_init(void) {
 	//uart_init(BIT_RATE_115200, BIT_RATE_115200);
+
+	wifi_set_opmode(STATION_MODE);		// set wifi mode
+
+	/* 与 smartconfig_connect() 二选一
+	 * wifi_connect() 在这里调用正常
+	 */
+	//wifi_connect(wifi_connect_cb);
+	/* 在这里调用不正常，无法用手机配网  */
+	//smartconfig_connect(wifi_connect_cb);
+
 	system_init_done_cb(init_done_cb_init);
 }
 
