@@ -54,8 +54,8 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 # 本人所用的开发环境
 
-- Windows 10 x64
-- [安信可 ESP 系列一体化开发环境](http://wiki.ai-thinker.com/ai_ide_install)
+- Windows 10
+- [安信可 ESP 系列一体化开发环境](http://wiki.ai-thinker.com/ai_ide_install)（基于 Windows + Cygwin + Eclipse + GCC 的综合 IDE 环境 ）
 
 
 
