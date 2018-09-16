@@ -52,14 +52,14 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 
 
-# 本人所用的开发环境
+## 本人所用的开发环境
 
 - Windows 10
 - [安信可 ESP 系列一体化开发环境](http://wiki.ai-thinker.com/ai_ide_install)（基于 Windows + Cygwin + Eclipse + GCC 的综合 IDE 环境 ）
+- NodeMCU（ESP8266 4MB flash）
 
 
-
-# 使用步骤
+## 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
 2. 然后下载并拷贝相关工程文件夹（比如cjson_app）到主目录，用法类似于ESP8266_NONOS_SDK/examples里面的工程；
@@ -67,11 +67,18 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 
 ![project_sample](screenshot/project_sample.png)
 
-# 注意事项
+## 烧写bin
 
-- 关于串口
+这一步对新手来说可能坑比较多。可参考安信可的[烧写步骤](http://wiki.ai-thinker.com/esp_download#%E7%83%A7%E5%BD%95%E4%B8%8B%E8%BD%BD)，也可参考我[ESP8266-Demos](https://github.com/AngelLiang/ESP8266-Demos)仓库里的[wiki](https://github.com/AngelLiang/ESP8266-Demos/wiki/%E7%83%A7%E5%BD%95%E8%AF%B4%E6%98%8E)（待完善）。
 
-    ESP8266串口打印默认为74800bps。
+对老手来说，平时怎么烧写就怎么烧写。
+
+
+## 注意事项
+
+- 关于串口波特率
+
+    ESP8266串口波特率打印默认为74800bps。
 
 - 关于中文乱码
 
