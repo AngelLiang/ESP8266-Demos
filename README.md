@@ -20,6 +20,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv2.0。
 | H04 | adc_app| 定时读取ADC数值 |
 | H05 | hw_timer_app | ESP8266使用硬件中断定时器示例 |
 | H06 | ir_app | IR接口示例 |
+| H07 | uart_app | UART回显示例 |
 
 **N系列**：与ESP8266网络（Network）相关的demo。
 
