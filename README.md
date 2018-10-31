@@ -2,6 +2,12 @@
 
 ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
 
+## 使用指南
+
+建议把本仓库当作一个代码实现参考的地方，有需要即可拷贝移植。也可以用`O00-empty_app`空白工程作为基础模板，需要什么功能再进行添加。
+
+## 系列说明
+
 **D系列**：与编码（Decode）相关的demo，加密和哈希相关的也会放在这里。
 
 | 序号 | 工程名称 | 说明 |
@@ -60,6 +66,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
 - NodeMCU（ESP8266 4MB flash）
 
 
+
 ## 使用步骤
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
@@ -68,11 +75,14 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
 
 ![project_sample](screenshot/project_sample.png)
 
+
+
 ## 烧写bin
 
 这一步对新手来说可能坑比较多。可参考安信可的[烧写步骤](http://wiki.ai-thinker.com/esp_download#%E7%83%A7%E5%BD%95%E4%B8%8B%E8%BD%BD)，也可参考我[ESP8266-Demos](https://github.com/AngelLiang/ESP8266-Demos)仓库里[wiki](https://github.com/AngelLiang/ESP8266-Demos/wiki)的烧写说明（目前待完善）。
 
 对老手来说，平时怎么烧写就怎么烧写。
+
 
 
 ## 注意事项
@@ -86,6 +96,8 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
     因为源码文件编码默认为UTF-8，而Windows Eclipse IDE默认为GBK，所以可能需要设置一下：
 
     菜单栏Window -> Preferences -> General -> Workspace -> 面板Text file encoding -> 选择UTF-8 -> OK
+
+
 
 ## 基于SDKv2.0.x的app移植到SDKv3.0.0步骤说明
 
@@ -123,24 +135,24 @@ SPI_SIZE_MAP?=4
 #if ((SPI_FLASH_SIZE_MAP == 0) || (SPI_FLASH_SIZE_MAP == 1))
 #error "The flash map is not supported"
 #elif (SPI_FLASH_SIZE_MAP == 2)
-#define SYSTEM_PARTITION_OTA_SIZE							0x6A000
-#define SYSTEM_PARTITION_OTA_2_ADDR							0x81000
-#define SYSTEM_PARTITION_RF_CAL_ADDR						0xfb000
-#define SYSTEM_PARTITION_PHY_DATA_ADDR						0xfc000
-#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR				0xfd000
+#define SYSTEM_PARTITION_OTA_SIZE                           0x6A000
+#define SYSTEM_PARTITION_OTA_2_ADDR                         0x81000
+#define SYSTEM_PARTITION_RF_CAL_ADDR                        0xfb000
+#define SYSTEM_PARTITION_PHY_DATA_ADDR                      0xfc000
+#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR              0xfd000
 #define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR           0x7c000
 #elif (SPI_FLASH_SIZE_MAP == 3)
-#define SYSTEM_PARTITION_OTA_SIZE							0x6A000
-#define SYSTEM_PARTITION_OTA_2_ADDR							0x81000
-#define SYSTEM_PARTITION_RF_CAL_ADDR						0x1fb000
-#define SYSTEM_PARTITION_PHY_DATA_ADDR						0x1fc000
-#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR				0x1fd000
+#define SYSTEM_PARTITION_OTA_SIZE                           0x6A000
+#define SYSTEM_PARTITION_OTA_2_ADDR                         0x81000
+#define SYSTEM_PARTITION_RF_CAL_ADDR                        0x1fb000
+#define SYSTEM_PARTITION_PHY_DATA_ADDR                      0x1fc000
+#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR              0x1fd000
 #define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR           0x7c000
 #elif (SPI_FLASH_SIZE_MAP == 4)
-#define SYSTEM_PARTITION_OTA_SIZE							0x6A000
-#define SYSTEM_PARTITION_OTA_2_ADDR							0x81000
-#define SYSTEM_PARTITION_RF_CAL_ADDR						0x3fb000
-#define SYSTEM_PARTITION_PHY_DATA_ADDR						0x3fc000
+#define SYSTEM_PARTITION_OTA_SIZE                           0x6A000
+#define SYSTEM_PARTITION_OTA_2_ADDR	                        0x81000
+#define SYSTEM_PARTITION_RF_CAL_ADDR                        0x3fb000
+#define SYSTEM_PARTITION_PHY_DATA_ADDR                      0x3fc000
 #define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR				0x3fd000
 #define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR           0x7c000
 #elif (SPI_FLASH_SIZE_MAP == 5)
@@ -151,12 +163,12 @@ SPI_SIZE_MAP?=4
 #define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR				0x1fd000
 #define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR           0xfc000
 #elif (SPI_FLASH_SIZE_MAP == 6)
-#define SYSTEM_PARTITION_OTA_SIZE							0x6A000
-#define SYSTEM_PARTITION_OTA_2_ADDR							0x101000
-#define SYSTEM_PARTITION_RF_CAL_ADDR						0x3fb000
-#define SYSTEM_PARTITION_PHY_DATA_ADDR						0x3fc000
-#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR				0x3fd000
-#define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR           0xfc000
+#define SYSTEM_PARTITION_OTA_SIZE                            0x6A000
+#define SYSTEM_PARTITION_OTA_2_ADDR                          0x101000
+#define SYSTEM_PARTITION_RF_CAL_ADDR                         0x3fb000
+#define SYSTEM_PARTITION_PHY_DATA_ADDR                       0x3fc000
+#define SYSTEM_PARTITION_SYSTEM_PARAMETER_ADDR               0x3fd000
+#define SYSTEM_PARTITION_CUSTOMER_PRIV_PARAM_ADDR            0xfc000
 #else
 #error "The flash map is not supported"
 #endif
