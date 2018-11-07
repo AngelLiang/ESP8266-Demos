@@ -71,10 +71,27 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
 
 1. 首先到[github](https://github.com/espressif/ESP8266_NONOS_SDK)或者[官网](http://espressif.com/zh-hans/products/hardware/esp8266ex/resources)下载SDK；
 2. 然后下载并拷贝相关工程文件夹（比如cjson_app）到主目录，用法类似于ESP8266_NONOS_SDK/examples里面的工程；
-3. 最后编译下载即可（建议先clean）。
+3. 使用SDKv3.0.0还需要修改该SDK的顶层Makefile。编辑器打开该SDK的顶层Makefile，找到下面配置变量，修改`SPI_SIZE_MAP`为4（如果是使用32Mbit Flash）。
+
+```Makefile
+# ...
+# 25行
+BOOT?=none
+APP?=0
+SPI_SPEED?=40
+SPI_MODE?=QIO
+SPI_SIZE_MAP?=4
+```
+
+如果不修改，后面编译会报下面错误：
+
+```
+#error "The flash map is not supported"
+```
+
+4. 最后编译下载即可（建议先clean）。
 
 ![project_sample](screenshot/project_sample.png)
-
 
 
 ## 烧写bin
