@@ -127,7 +127,7 @@ ESP8266示例工程集合，基于ESP8266_NONOS_SDKv3.0.0。
 
 https://github.com/espressif/ESP8266_NONOS_SDK
 
-### 第二步：导入该SDK
+### 第二步：导入该SDK到IDE
 
 这个就不赘述了。
 
